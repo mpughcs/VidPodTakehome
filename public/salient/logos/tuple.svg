@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="40" viewBox="0 0 128 40">
+  <rect width="128" height="40" rx="10" fill="#0f172a" fill-opacity="0.06"/>
+  <text x="64" y="26" text-anchor="middle" font-family="ui-sans-serif, system-ui" font-size="16" fill="#0f172a" fill-opacity="0.55" font-weight="700">
+    Tuple
+  </text>
+</svg>
+
