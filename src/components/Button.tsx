@@ -11,16 +11,16 @@ const baseStyles = {
 const variantStyles = {
   solid: {
     slate:
-      "bg-slate-900 text-white hover:bg-slate-700 hover:text-slate-100 active:bg-slate-800 active:text-slate-300 focus-visible:outline-slate-900",
-    blue: "bg-blue-600 text-white hover:text-slate-100 hover:bg-blue-500 active:bg-blue-800 active:text-blue-100 focus-visible:outline-blue-600",
+      "bg-surface-invert text-text-invert hover:bg-text-secondary hover:text-surface active:bg-text-primary active:text-text-muted focus-visible:outline-surface-invert",
+    blue: "bg-brand text-brand-foreground hover:text-brand-foreground hover:bg-brand-hover active:bg-brand-hover active:text-brand-foreground focus-visible:outline-brand",
     white:
-      "bg-white text-slate-900 hover:bg-blue-50 active:bg-blue-200 active:text-slate-600 focus-visible:outline-white",
+      "bg-surface text-text-primary hover:bg-brand-muted active:bg-brand-muted active:text-text-secondary focus-visible:outline-surface",
   },
   outline: {
     slate:
-      "ring-slate-200 text-slate-700 hover:text-slate-900 hover:ring-slate-300 active:bg-slate-100 active:text-slate-600 focus-visible:outline-blue-600 focus-visible:ring-slate-300",
+      "ring-border text-text-secondary hover:text-text-primary hover:ring-border-strong active:bg-surface-overlay active:text-text-secondary focus-visible:outline-brand focus-visible:ring-border-strong",
     white:
-      "ring-slate-700 text-white hover:ring-slate-500 active:ring-slate-700 active:text-slate-400 focus-visible:outline-white",
+      "ring-text-muted text-text-invert hover:ring-text-tertiary active:ring-text-muted active:text-text-muted focus-visible:outline-surface",
   },
 }
 
@@ -61,4 +61,3 @@ export function Button({ className, ...props }: ButtonProps) {
     <Link className={className} {...props} />
   )
 }
-

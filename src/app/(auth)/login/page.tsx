@@ -1,10 +1,9 @@
 import { type Metadata } from "next"
 import Link from "next/link"
 
-import { Button } from "@/components/Button"
-import { TextField } from "@/components/Fields"
 import { Logo } from "@/components/Logo"
 import { SlimLayout } from "@/components/SlimLayout"
+import { LoginForm } from "@/app/(auth)/login/LoginForm"
 
 export const metadata: Metadata = {
   title: "Sign In",
@@ -12,45 +11,46 @@ export const metadata: Metadata = {
 
 export default function Login() {
   return (
-    <SlimLayout>
+    <SlimLayout
+      press={[
+        {
+          meta: "Bandcamp Daily · Jan 20, 2026",
+          title: `Sunday Mourners, "A-Rhythm Absolute"`,
+          quote:
+            "It's a great time to be an indie band making anything that sounds post-punk.",
+          source: "Bandcamp Daily",
+        },
+        {
+          meta: "Tinnitist · Jan 15, 2026",
+          title: "Albums Of The Week: Sunday Mourners | A-Rhythm Absolute",
+          quote:
+            "Sunday Mourners are here and it is OK. It is OK to feel good about indie music again.",
+          source: "Tinnitist",
+        },
+        {
+          meta: "The Tulane Hullabaloo · Jan 25, 2026",
+          title: "Sunday Mourners' debut album establishes fresh voice in indie rock",
+          quote: "A new Los Angeles band has joined this wave, carving out their own path.",
+          source: "The Tulane Hullabaloo",
+        },
+      ]}
+    >
       <div className="flex">
         <Link href="/" aria-label="Home">
           <Logo className="h-10 w-auto" />
         </Link>
       </div>
-      <h2 className="mt-20 text-lg font-semibold text-gray-900">
+      <h2 className="mt-20 text-lg font-semibold text-text-primary">
         Sign in to your account
       </h2>
-      <p className="mt-2 text-sm text-gray-700">
+      <p className="mt-2 text-sm text-text-secondary">
         Don’t have an account?{" "}
-        <Link href="/register" className="font-medium text-blue-600 hover:underline">
+        <Link href="/register" className="font-medium text-brand hover:underline">
           Sign up
         </Link>{" "}
         for a free trial.
       </p>
-      <form action="#" className="mt-10 grid grid-cols-1 gap-y-8">
-        <TextField
-          label="Email address"
-          name="email"
-          type="email"
-          autoComplete="email"
-          required
-        />
-        <TextField
-          label="Password"
-          name="password"
-          type="password"
-          autoComplete="current-password"
-          required
-        />
-        <div>
-          <Button type="submit" variant="solid" color="blue" className="w-full">
-            <span>
-              Sign in <span aria-hidden="true">&rarr;</span>
-            </span>
-          </Button>
-        </div>
-      </form>
+      <LoginForm />
     </SlimLayout>
   )
 }

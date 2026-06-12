@@ -1,10 +1,9 @@
 import { type Metadata } from "next"
 import Link from "next/link"
 
-import { Button } from "@/components/Button"
-import { SelectField, TextField } from "@/components/Fields"
 import { Logo } from "@/components/Logo"
 import { SlimLayout } from "@/components/SlimLayout"
+import { RegisterForm } from "@/app/(auth)/register/RegisterForm"
 
 export const metadata: Metadata = {
   title: "Sign Up",
@@ -12,74 +11,44 @@ export const metadata: Metadata = {
 
 export default function Register() {
   return (
-    <SlimLayout>
+    <SlimLayout   press={[
+      {
+        meta: "Bandcamp Daily · Jan 20, 2026",
+        title: `Sunday Mourners, "A-Rhythm Absolute"`,
+        quote:
+          "It's a great time to be an indie band making anything that sounds post-punk.",
+        source: "Bandcamp Daily",
+      },
+      {
+        meta: "Tinnitist · Jan 15, 2026",
+        title: "Albums Of The Week: Sunday Mourners | A-Rhythm Absolute",
+        quote:
+          "Sunday Mourners are here and it is OK. It is OK to feel good about indie music again.",
+        source: "Tinnitist",
+      },
+      {
+        meta: "The Tulane Hullabaloo · Jan 25, 2026",
+        title: "Sunday Mourners' debut album establishes fresh voice in indie rock",
+        quote: "A new Los Angeles band has joined this wave, carving out their own path.",
+        source: "The Tulane Hullabaloo",
+      },
+    ]}>
       <div className="flex">
         <Link href="/" aria-label="Home">
           <Logo className="h-10 w-auto" />
         </Link>
       </div>
-      <h2 className="mt-20 text-lg font-semibold text-gray-900">
+      <h2 className="mt-20 text-lg font-semibold text-text-primary">
         Get started for free
       </h2>
-      <p className="mt-2 text-sm text-gray-700">
+      <p className="mt-2 text-sm text-text-secondary">
         Already registered?{" "}
-        <Link href="/login" className="font-medium text-blue-600 hover:underline">
+        <Link href="/login" className="font-medium text-brand hover:underline">
           Sign in
         </Link>{" "}
         to your account.
       </p>
-      <form
-        action="#"
-        className="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-2"
-      >
-        <TextField
-          label="First name"
-          name="first_name"
-          type="text"
-          autoComplete="given-name"
-          required
-        />
-        <TextField
-          label="Last name"
-          name="last_name"
-          type="text"
-          autoComplete="family-name"
-          required
-        />
-        <TextField
-          className="col-span-full"
-          label="Email address"
-          name="email"
-          type="email"
-          autoComplete="email"
-          required
-        />
-        <TextField
-          className="col-span-full"
-          label="Password"
-          name="password"
-          type="password"
-          autoComplete="new-password"
-          required
-        />
-        <SelectField
-          className="col-span-full"
-          label="How did you hear about us?"
-          name="referral_source"
-        >
-          <option>AltaVista search</option>
-          <option>Super Bowl commercial</option>
-          <option>Our route 34 city bus ad</option>
-          <option>The “Never Use This” podcast</option>
-        </SelectField>
-        <div className="col-span-full">
-          <Button type="submit" variant="solid" color="blue" className="w-full">
-            <span>
-              Sign up <span aria-hidden="true">&rarr;</span>
-            </span>
-          </Button>
-        </div>
-      </form>
+      <RegisterForm />
     </SlimLayout>
   )
 }

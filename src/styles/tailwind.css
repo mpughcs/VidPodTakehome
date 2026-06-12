@@ -1,8 +1,13 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Yrsa:ital,wght@0,300..700;1,300..700&display=swap');
 @import 'tailwindcss';
+@import '../app/globals.css';
+
 
 @plugin '@tailwindcss/forms';
 
 @theme {
+  --font-yrsa: 'Yrsa', serif;
   --text-*: initial;
   --text-xs: 0.75rem;
   --text-xs--line-height: 1rem;

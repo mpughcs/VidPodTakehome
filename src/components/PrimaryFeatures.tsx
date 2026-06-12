@@ -62,7 +62,7 @@ export function PrimaryFeatures() {
     <section
       id="features"
       aria-label="Features for running your books"
-      className="relative overflow-hidden bg-blue-600 pt-20 pb-28 sm:py-32"
+      className="relative overflow-hidden bg-brand pt-20 pb-28 sm:py-32"
     >
       <Image
         className="absolute top-1/2 left-1/2 max-w-none translate-x-[-44%] translate-y-[-42%]"
@@ -74,10 +74,10 @@ export function PrimaryFeatures() {
       />
       <Container className="relative">
         <div className="max-w-2xl md:mx-auto md:text-center xl:max-w-none">
-          <h2 className="font-display text-3xl tracking-tight text-white sm:text-4xl md:text-5xl">
+          <h2 className="font-display text-3xl tracking-tight text-text-invert sm:text-4xl md:text-5xl">
             Everything you need to run your books.
           </h2>
-          <p className="mt-6 text-lg tracking-tight text-blue-100">
+          <p className="mt-6 text-lg tracking-tight text-brand-foreground/80">
             Well everything you need if you aren’t that picky about minor
             details like tax compliance.
           </p>
@@ -96,8 +96,8 @@ export function PrimaryFeatures() {
                       className={clsx(
                         "group relative rounded-full px-4 py-1 lg:rounded-l-xl lg:rounded-r-none lg:p-6",
                         selectedIndex === featureIndex
-                          ? "bg-white lg:bg-white/10 lg:ring-1 lg:ring-white/10 lg:ring-inset"
-                          : "hover:bg-white/10 lg:hover:bg-white/5"
+                          ? "bg-surface lg:bg-surface/10 lg:ring-1 lg:ring-white/10 lg:ring-inset"
+                          : "hover:bg-surface/10 lg:hover:bg-surface/5"
                       )}
                     >
                       <h3>
@@ -105,8 +105,8 @@ export function PrimaryFeatures() {
                           className={clsx(
                             "font-display text-lg data-selected:not-data-focus:outline-hidden",
                             selectedIndex === featureIndex
-                              ? "text-blue-600 lg:text-white"
-                              : "text-blue-100 hover:text-white lg:text-white"
+                              ? "text-brand lg:text-text-invert"
+                              : "text-brand-foreground/80 hover:text-text-invert lg:text-text-invert"
                           )}
                         >
                           <span className="absolute inset-0 rounded-full lg:rounded-l-xl lg:rounded-r-none" />
@@ -117,8 +117,8 @@ export function PrimaryFeatures() {
                         className={clsx(
                           "mt-2 hidden text-sm lg:block",
                           selectedIndex === featureIndex
-                            ? "text-white"
-                            : "text-blue-100 group-hover:text-white"
+                            ? "text-text-invert"
+                            : "text-brand-foreground/80 group-hover:text-text-invert"
                         )}
                       >
                         {feature.description}
@@ -131,12 +131,12 @@ export function PrimaryFeatures() {
                 {features.map((feature) => (
                   <TabPanel key={feature.title} unmount={false}>
                     <div className="relative sm:px-6 lg:hidden">
-                      <div className="absolute -inset-x-4 top-[-6.5rem] bottom-[-4.25rem] bg-white/10 ring-1 ring-white/10 ring-inset sm:inset-x-0 sm:rounded-t-xl" />
-                      <p className="relative mx-auto max-w-2xl text-base text-white sm:text-center">
+                      <div className="absolute -inset-x-4 top-[-6.5rem] bottom-[-4.25rem] bg-surface/10 ring-1 ring-white/10 ring-inset sm:inset-x-0 sm:rounded-t-xl" />
+                      <p className="relative mx-auto max-w-2xl text-base text-text-invert sm:text-center">
                         {feature.description}
                       </p>
                     </div>
-                    <div className="mt-10 w-[45rem] overflow-hidden rounded-xl bg-slate-50 shadow-xl shadow-blue-900/20 sm:w-auto lg:mt-0 lg:w-[67.8125rem]">
+                    <div className="mt-10 w-[45rem] overflow-hidden rounded-xl bg-surface-raised shadow-xl shadow-brand/20 sm:w-auto lg:mt-0 lg:w-[67.8125rem]">
                       <Image
                         className="w-full"
                         src={feature.image}
