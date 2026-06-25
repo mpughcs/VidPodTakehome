@@ -4,10 +4,18 @@ import { useState } from "react"
 import clsx from "clsx"
 import { IoIosArrowForward } from "react-icons/io"
 
+import {
+  ImportMp4Modal,
+  openImportMp4Modal,
+} from "@/components/ads-editor/ImportMp4Modal"
 import { episodeNavItems } from "@/components/workspace/episode-nav-items"
+import { useEpisodes } from "@/context/EpisodeContext"
 
 export function EpisodeDropdown() {
   const [open, setOpen] = useState(false)
+  const { activeEpisode, episodes, selectEpisode } = useEpisodes()
+
+  if (!activeEpisode) return null
 
   return (
     <li className="relative w-full hover:bg-transparent">
@@ -18,19 +26,42 @@ export function EpisodeDropdown() {
         className="relative z-10 btn btn-outline w-full justify-around border-slate-100 bg-white"
       >
         <div className="h-8 w-8 overflow-hidden rounded-sm">
-          <img
-            src="https://img.daisyui.com/images/profile/demo/batperson@192.webp"
-            alt=""
-          />
+          <img src={activeEpisode.thumbnail} alt="" />
         </div>
-        <span>The Diary Of A CEO</span>
+        <span className="truncate">{activeEpisode.title}</span>
         <IoIosArrowForward
           className={clsx(
-            "relative transition-transform duration-200",
+            "relative shrink-0 transition-transform duration-200",
             open && "rotate-90"
           )}
         />
       </button>
+
+      {episodes.length > 1 && open && (
+        <ul className="mt-2 flex flex-col gap-1 px-3">
+          {episodes
+            .filter((episode) => episode.id !== activeEpisode.id)
+            .map((episode) => (
+              <li key={episode.id}>
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm w-full justify-start gap-2 rounded-lg border border-slate-100 bg-white"
+                  onClick={() => {
+                    selectEpisode(episode.id)
+                    setOpen(false)
+                  }}
+                >
+                  <img
+                    src={episode.thumbnail}
+                    alt=""
+                    className="h-6 w-6 rounded-sm object-cover"
+                  />
+                  <span className="truncate text-sm">{episode.title}</span>
+                </button>
+              </li>
+            ))}
+        </ul>
+      )}
 
       <div
         className={clsx(
@@ -55,6 +86,9 @@ export function EpisodeDropdown() {
                 <button
                   type="button"
                   tabIndex={open ? 0 : -1}
+                  onClick={() => {
+                    if (label === "Import") openImportMp4Modal()
+                  }}
                   className={clsx(
                     "relative left-16 flex w-full items-center gap-3 rounded-lg border-0 bg-transparent px-2 py-1.5 text-left shadow-none transition-colors hover:bg-slate-200/60 focus-visible:outline-none",
                     active
@@ -72,6 +106,7 @@ export function EpisodeDropdown() {
           </ul>
         </div>
       </div>
+      <ImportMp4Modal />
     </li>
   )
 }
