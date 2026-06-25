@@ -1,5 +1,3 @@
-@import "tailwindcss";
-@import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -350,6 +348,42 @@
   
   --border-subtle: oklch(0.92 0 0);
   --border-strong: oklch(0.8 0 0);
+}
+
+/* DaisyUI token bridge */
+:root,
+[data-theme=""],
+[data-theme="vidpod"],
+[data-theme="clippings"],
+[data-theme="forest"],
+[data-theme="sunset"],
+[data-theme="midnight"],
+[data-theme="rose"],
+[data-theme="ocean"],
+[data-theme="mono"] {
+  --color-base-100: var(--surface);
+  --color-base-200: var(--surface-raised);
+  --color-base-300: var(--surface-overlay);
+  --color-base-content: var(--text-primary);
+  --color-primary: var(--brand);
+  --color-primary-content: var(--brand-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-content: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-content: var(--accent-foreground);
+  --color-neutral: var(--surface-invert);
+  --color-neutral-content: var(--text-invert);
+  --color-info: var(--brand);
+  --color-info-content: var(--brand-foreground);
+  --color-success: var(--success);
+  --color-success-content: var(--success-foreground);
+  --color-warning: var(--chart-4);
+  --color-warning-content: var(--text-primary);
+  --color-error: var(--destructive);
+  --color-error-content: var(--primary-foreground);
+  --radius-selector: var(--radius);
+  --radius-field: var(--radius);
+  --radius-box: var(--radius);
 }
 
 @layer base {

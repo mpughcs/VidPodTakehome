@@ -3,6 +3,7 @@ import { Inter, Lexend } from "next/font/google"
 import clsx from "clsx"
 
 import "@/styles/tailwind.css"
+import "@/styles/globals.css"
 import { Providers } from "./providers"
 
 export const metadata: Metadata = {
@@ -34,7 +35,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      data-theme=""
+      data-theme="vidpod"
       className={clsx(
         "h-full scroll-smooth bg-surface antialiased",
         inter.variable,

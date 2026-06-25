@@ -13,6 +13,8 @@ import { Button } from "@/components/Button"
 import { Container } from "@/components/Container"
 import { Logo } from "@/components/Logo"
 import { NavLink } from "@/components/NavLink"
+import { CiSettings, CiBellOn } from "react-icons/ci";
+
 
 function MobileNavLink({
   href,
@@ -81,31 +83,28 @@ function MobileNavigation() {
 
 export function Header() {
   return (
-    <header className="py-10">
+    <header className="pt-10 pb-4 border-b-2">
       <Container>
-        <nav className="relative z-50 flex justify-between">
+        <nav className="relative z-50 flex justify-between font-lexend">
           <div className="flex items-center md:gap-x-12">
             <Link href="#" aria-label="Home">
               <Logo className="h-10 w-auto" />
             </Link>
-            <div className="hidden md:flex md:gap-x-6">
-              <NavLink href="#features">Features</NavLink>
-              {/* <NavLink href="#testimonials">Testimonials</NavLink> */}
-              <NavLink href="#pricing">Pricing</NavLink>
+
+          </div>
+          <div className="md:flex hidden items-center gap-x-5 md:gap-x-8">
+
+            <div className="flex items-center gap-6">
+              <CiSettings className="text-2xl" />
+              <CiBellOn className="text-2xl" />
+              <button className="btn bg-white text-black border-[#e5e5e5]">
+                <svg aria-label="Email icon" width="16" height="16" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g strokeLinejoin="round" strokeLinecap="round" strokeWidth="2" fill="none" stroke="black"><rect width="20" height="16" x="2" y="4" rx="2"></rect><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path></g></svg>
+                Login with Email
+              </button>
             </div>
           </div>
-          <div className="flex items-center gap-x-5 md:gap-x-8">
-            <div className="hidden md:block">
-              <NavLink href="/login">Sign in</NavLink>
-            </div>
-            <Button href="/register" color="blue">
-              <span>
-                Try for free
-              </span>
-            </Button>
-            <div className="-mr-1 md:hidden">
-              <MobileNavigation />
-            </div>
+          <div className="-mr-1 md:hidden">
+            <MobileNavigation />
           </div>
         </nav>
       </Container>
