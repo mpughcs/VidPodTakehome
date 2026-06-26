@@ -14,22 +14,21 @@ import {
 import { getFirebaseFirestore } from "@/lib/firebase"
 import type { Episode } from "@/types/episode"
 
+const DEFAULT_THUMBNAIL =
+  "https://img.daisyui.com/images/profile/demo/batperson@192.webp"
+
 export type CreateEpisodeInput = {
   title: string
   description?: string
-  author?: string
-  company?: string
-  product?: string
   thumbnail?: string
   duration?: number
+  src?: string
+  creatorId: string
 }
 
 type FirestoreEpisode = Omit<Episode, "id"> & {
   createdAt?: { toDate: () => Date }
 }
-
-const DEFAULT_THUMBNAIL =
-  "https://img.daisyui.com/images/profile/demo/batperson@192.webp"
 
 function episodesCollection() {
   return collection(getFirebaseFirestore(), "episodes")
@@ -38,14 +37,14 @@ function episodesCollection() {
 function toEpisode(id: string, data: FirestoreEpisode): Episode {
   return {
     id,
-    title: data.title,
-    author: data.author,
-    company: data.company,
-    product: data.product,
-    description: data.description,
-    thumbnail: data.thumbnail,
-    duration: data.duration,
-    uploadDate: data.uploadDate,
+    title: data.title ?? "Untitled episode",
+    description: data.description ?? "",
+    thumbnail: data.thumbnail ?? DEFAULT_THUMBNAIL,
+    duration: data.duration ?? 300,
+    uploadDate: data.uploadDate ?? "",
+    creatorId: data.creatorId ?? "",
+    src: data.src,
+    epNumber: data.epNumber,
   }
 }
 
@@ -83,12 +82,11 @@ export async function createEpisode(input: CreateEpisodeInput): Promise<Episode>
   const payload = {
     title: input.title.trim(),
     description: input.description?.trim() ?? "",
-    author: input.author?.trim() ?? "Unknown author",
-    company: input.company?.trim() ?? "",
-    product: input.product?.trim() ?? "",
     thumbnail: input.thumbnail ?? DEFAULT_THUMBNAIL,
     duration: input.duration ?? 300,
     uploadDate,
+    src: input.src?.trim() ?? "",
+    creatorId: input.creatorId,
     createdAt: serverTimestamp(),
   }
 
@@ -98,18 +96,17 @@ export async function createEpisode(input: CreateEpisodeInput): Promise<Episode>
     id: docRef.id,
     title: payload.title,
     description: payload.description,
-    author: payload.author,
-    company: payload.company,
-    product: payload.product,
     thumbnail: payload.thumbnail,
     duration: payload.duration,
     uploadDate: payload.uploadDate,
+    creatorId: payload.creatorId,
+    src: payload.src,
   }
 }
 
 export async function updateEpisode(
   episodeId: string,
-  input: Partial<CreateEpisodeInput>
+  input: Partial<Omit<CreateEpisodeInput, "creatorId">>
 ): Promise<void> {
   const docRef = doc(getFirebaseFirestore(), "episodes", episodeId)
   await updateDoc(docRef, {

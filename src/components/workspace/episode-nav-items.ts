@@ -12,7 +12,7 @@ export const episodeNavItems: {
   active?: boolean
 }[] = [
   { icon: CiGrid42, label: "Dashboard" },
-  { icon: CiWavePulse1, label: "Analytics", active: true },
+  { icon: CiWavePulse1, label: "Analytics" },
   { icon: CiBadgeDollar, label: "Ads" },
   { icon: CiGrid42, label: "Channels" },
   { icon: CiImport, label: "Import" },

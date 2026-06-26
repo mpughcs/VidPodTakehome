@@ -40,7 +40,6 @@ import type {
   CreateAdMarkerInput,
   UpdateAdMarkerInput,
 } from "@/types/ad-marker"
-import { DEFAULT_MARKER_DURATION_SECONDS } from "@/types/ad-marker"
 
 const IMPORT_TRACK_NAME = "Imported clips"
 const VIDEO_RESOLUTION = { width: 720, height: 480 }
@@ -191,13 +190,13 @@ function AdsTimelineInner({
       const overlaps = adMarkers.some(
         (marker) =>
           slot.startSeconds < marker.endSeconds &&
-          slot.startSeconds + DEFAULT_MARKER_DURATION_SECONDS > marker.startSeconds
+          slot.startSeconds + 15 > marker.startSeconds
       )
       if (overlaps) continue
 
       await createAdMarker(episodeId, {
         startSeconds: slot.startSeconds,
-        endSeconds: slot.startSeconds + DEFAULT_MARKER_DURATION_SECONDS,
+        endSeconds: slot.startSeconds + 15,
         mode: slot.mode,
       })
     }

@@ -1,8 +1,11 @@
-import type { Episode } from "@/types/episode"
+"use client"
+
+import Link from "next/link"
 
 import { AdMarkersPanel } from "@/components/ads-editor/AdMarkersPanel"
 import { TimelinePanel } from "@/components/ads-editor/TimelinePanel"
 import { VideoPlayerPanel } from "@/components/ads-editor/VideoPlayerPanel"
+import type { Episode } from "@/types/episode"
 
 type AdsEditorProps = {
   episode: Episode
@@ -22,17 +25,18 @@ export function AdsEditor({ episode }: AdsEditorProps) {
   return (
     <div className="flex flex-col gap-6 p-6 lg:p-8">
       <header>
-        <button
-          type="button"
+        <Link
+          href="/"
           className="text-sm text-slate-500 hover:text-slate-700"
         >
-          ← Ads
-        </button>
+          ← Episodes
+        </Link>
         <h1 className="mt-2 max-w-4xl text-2xl font-semibold leading-tight text-slate-900 lg:text-3xl">
           {episode.title}
         </h1>
         <p className="mt-2 text-sm text-slate-500">
-          {episode.author} • {formatUploadDate(episode.uploadDate)}
+          {formatUploadDate(episode.uploadDate)}
+          {episode.description ? ` · ${episode.description}` : ""}
         </p>
       </header>
 

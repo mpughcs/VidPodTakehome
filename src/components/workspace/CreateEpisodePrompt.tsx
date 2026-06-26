@@ -1,11 +1,11 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 
 import { useEpisodes } from "@/context/EpisodeContext"
 import type { CreateEpisodeInput } from "@/lib/episodes-db"
-import {UserProvider, useUser} from "@/context/UserContext"
-import { useRouter } from "next/navigation"
+
 const MODAL_ID = "create-episode-modal"
 
 let openModalHandler: (() => void) | null = null
@@ -17,17 +17,14 @@ export function openCreateEpisodeModal() {
 }
 
 type CreateEpisodeModalProps = {
-  onSubmit: (input: CreateEpisodeInput) => Promise<unknown>
+  onSubmit: (input: Omit<CreateEpisodeInput, "creatorId">) => Promise<unknown>
 }
 
 export function CreateEpisodeModal({ onSubmit }: CreateEpisodeModalProps) {
   const { isCreating } = useEpisodes()
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
-  const [error, setError] = useState<string | null>(null)  
-
-
- 
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     openModalHandler = () => {
@@ -67,7 +64,7 @@ export function CreateEpisodeModal({ onSubmit }: CreateEpisodeModalProps) {
       <div className="modal-box">
         <h3 className="text-lg font-bold">Create an episode</h3>
         <p className="py-2 text-sm text-slate-500">
-          Add a new podcast episode to start placing ads on your timeline.
+          Add a new episode to The Diary Of A CEO.
         </p>
 
         <div className="flex flex-col gap-4 py-2">
@@ -119,50 +116,16 @@ export function CreateEpisodeModal({ onSubmit }: CreateEpisodeModalProps) {
   )
 }
 
-export function CreateEpisodePrompt() {
-  const { error } = useEpisodes()
-  const { user, isAuthenticated, loading } = useUser()
+export function CreateEpisodeModalHost() {
   const router = useRouter()
-  function handleSignIn() {
-    router.push("/login")
-  }
+  const { createEpisode } = useEpisodes()
 
   return (
-    <div className="flex min-h-[calc(100vh-5rem)] flex-col items-center justify-center px-6 py-16">
-      <div className="max-w-lg rounded-2xl border border-slate-200 bg-white p-10 text-center shadow-sm">
-        <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">
-          Welcome
-        </p>
-        <h1 className="mt-3 text-3xl font-semibold text-slate-900">
-          Create your first episode
-        </h1>
-        <p className="mt-3 text-slate-500">
-          You need an episode before you can mark ad placements, import clips,
-          or manage your timeline.
-        </p>
-
-     
-       {loading ? (
-        <div className="mt-8 rounded-xl px-8">
-        </div>
-       ) : isAuthenticated ? (
-        <button
-          type="button"
-          className="btn btn-primary mt-8 rounded-xl px-8"
-          onClick={openCreateEpisodeModal}
-        >
-          Create an episode
-        </button>
-        ) : (
-          <button
-            type="button"
-            className="btn btn-primary mt-8 rounded-xl px-8"
-            onClick={handleSignIn}
-          >
-            Sign in
-          </button>
-        )}
-      </div>
-    </div>
+    <CreateEpisodeModal
+      onSubmit={async (input) => {
+        const episode = await createEpisode(input)
+        router.push(`/episodes/${episode.id}`)
+      }}
+    />
   )
 }

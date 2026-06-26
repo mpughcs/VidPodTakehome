@@ -9,10 +9,21 @@ import {
 } from "@/components/ads-editor/AdMarkerFormModal"
 import { useAdsTimeline } from "@/context/AdsTimelineContext"
 import {
-  AD_MARKER_MODE_CLASSES,
-  AD_MARKER_MODE_LABELS,
   formatMarkerTime,
+  type AdMarkerMode,
 } from "@/types/ad-marker"
+
+const MODE_LABELS: Record<AdMarkerMode, string> = {
+  static: "Static",
+  auto: "Auto",
+  ab: "A/B",
+}
+
+const MODE_CLASSES: Record<AdMarkerMode, string> = {
+  auto: "bg-emerald-100 text-emerald-700",
+  static: "bg-sky-100 text-sky-700",
+  ab: "bg-amber-100 text-amber-700",
+}
 
 export function AdMarkersPanel() {
   const {
@@ -67,10 +78,10 @@ export function AdMarkersPanel() {
               <span
                 className={clsx(
                   "rounded-full px-3 py-1 text-xs font-semibold",
-                  AD_MARKER_MODE_CLASSES[marker.mode]
+                  MODE_CLASSES[marker.mode]
                 )}
               >
-                {AD_MARKER_MODE_LABELS[marker.mode]}
+                {MODE_LABELS[marker.mode]}
               </span>
               <button
                 type="button"

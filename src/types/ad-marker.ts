@@ -18,22 +18,6 @@ export type CreateAdMarkerInput = {
 
 export type UpdateAdMarkerInput = Partial<CreateAdMarkerInput>
 
-export const DEFAULT_EPISODE_ID = "episode-503"
-export const AD_MARKERS_TRACK_NAME = "Ad markers"
-export const DEFAULT_MARKER_DURATION_SECONDS = 15
-
-export const AD_MARKER_MODE_LABELS: Record<AdMarkerMode, string> = {
-  static: "Static",
-  auto: "Auto",
-  ab: "A/B",
-}
-
-export const AD_MARKER_MODE_CLASSES: Record<AdMarkerMode, string> = {
-  auto: "bg-emerald-100 text-emerald-700",
-  static: "bg-sky-100 text-sky-700",
-  ab: "bg-amber-100 text-amber-700",
-}
-
 export function formatMarkerTime(totalSeconds: number): string {
   const seconds = Math.max(0, Math.floor(totalSeconds))
   const h = Math.floor(seconds / 3600)

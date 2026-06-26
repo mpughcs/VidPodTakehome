@@ -1,18 +1,21 @@
 import type { ProjectJSON } from "@twick/timeline"
 
-import {
-  AD_MARKERS_TRACK_NAME,
-  AD_MARKER_MODE_LABELS,
-  type AdMarker,
-} from "@/types/ad-marker"
+import type { AdMarker, AdMarkerMode } from "@/types/ad-marker"
 
-export const AD_MARKERS_TRACK_ID = "track-ads"
+const AD_MARKERS_TRACK_ID = "track-ads"
+const AD_MARKERS_TRACK_NAME = "Ad markers"
+
+const MODE_LABELS: Record<AdMarkerMode, string> = {
+  static: "Static",
+  auto: "Auto",
+  ab: "A/B",
+}
 
 export function adMarkersToTrackElements(markers: AdMarker[]) {
   return markers.map((marker) => ({
     id: marker.id,
     type: "video" as const,
-    name: AD_MARKER_MODE_LABELS[marker.mode],
+    name: MODE_LABELS[marker.mode],
     s: marker.startSeconds,
     e: marker.endSeconds,
     props: { adMode: marker.mode },

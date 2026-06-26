@@ -85,7 +85,7 @@ export function Header() {
   return (
     <header className="pt-10 pb-4 border-b-2">
       <Container>
-        <nav className="relative z-50 flex justify-between font-lexend">
+        <nav className="relative flex justify-between font-lexend">
           <div className="flex items-center md:gap-x-12">
             <Link href="#" aria-label="Home">
               <Logo className="h-10 w-auto" />

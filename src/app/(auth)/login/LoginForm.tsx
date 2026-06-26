@@ -3,7 +3,6 @@
 import { useState, type FormEvent } from "react"
 import { useRouter } from "next/navigation"
 
-import { Button } from "@/components/Button"
 import { TextField } from "@/components/Fields"
 import { useAuth } from "@/context/AuthContext"
 
@@ -57,18 +56,13 @@ export function LoginForm() {
         </p>
       ) : null}
       <div>
-        <Button
+        <button
           type="submit"
-          variant="solid"
-          color="blue"
-          className="w-full"
+          className="btn btn-primary w-full"
           disabled={submitting}
         >
-          <span>
-            {submitting ? "Signing in…" : "Sign in"}{" "}
-            <span aria-hidden="true">&rarr;</span>
-          </span>
-        </Button>
+          {submitting ? "Signing in…" : "Sign in"}
+        </button>
       </div>
     </form>
   )

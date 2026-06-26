@@ -1,4 +1,5 @@
 import type { ReactNode } from "react"
+import { IoIosArrowForward } from "react-icons/io"
 
 const DRAWER_ID = "workspace-drawer"
 
@@ -14,7 +15,7 @@ export function WorkspaceLayout({ sidebar, children }: WorkspaceLayoutProps) {
 
       <div className="drawer-content min-h-[calc(100vh-5rem)] w-full bg-slate-50">
         <label htmlFor={DRAWER_ID} className="btn drawer-button lg:hidden">
-          Open sidebar
+          <IoIosArrowForward className="text-2xl" />
         </label>
         {children}
       </div>

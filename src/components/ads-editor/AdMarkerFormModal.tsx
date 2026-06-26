@@ -3,8 +3,6 @@
 import { useEffect, useState } from "react"
 
 import {
-  AD_MARKER_MODE_LABELS,
-  DEFAULT_MARKER_DURATION_SECONDS,
   formatMarkerTime,
   parseMarkerTime,
   type AdMarker,
@@ -13,6 +11,12 @@ import {
 } from "@/types/ad-marker"
 
 const MODAL_ID = "ad-marker-form-modal"
+
+const MODE_LABELS: Record<AdMarkerMode, string> = {
+  static: "Static",
+  auto: "Auto",
+  ab: "A/B",
+}
 
 type FormMode = "create" | "edit"
 
@@ -56,7 +60,7 @@ export function AdMarkerFormModal({ onSubmit }: AdMarkerFormModalProps) {
       }
 
       setStartTime("00:00:30")
-      setEndTime(formatMarkerTime(30 + DEFAULT_MARKER_DURATION_SECONDS))
+      setEndTime(formatMarkerTime(45))
       setMode("auto")
     }
 
@@ -135,10 +139,10 @@ export function AdMarkerFormModal({ onSubmit }: AdMarkerFormModalProps) {
               value={mode}
               onChange={(e) => setMode(e.target.value as AdMarkerMode)}
             >
-              {(Object.keys(AD_MARKER_MODE_LABELS) as AdMarkerMode[]).map(
+              {(Object.keys(MODE_LABELS) as AdMarkerMode[]).map(
                 (option) => (
                   <option key={option} value={option}>
-                    {AD_MARKER_MODE_LABELS[option]}
+                    {MODE_LABELS[option]}
                   </option>
                 )
               )}
