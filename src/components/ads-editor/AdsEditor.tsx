@@ -36,13 +36,14 @@ export function AdsEditor({ episode }: AdsEditorProps) {
         </h1>
         <p className="mt-2 text-sm text-slate-500">
           {formatUploadDate(episode.uploadDate)}
-          {episode.description ? ` · ${episode.description}` : ""}
+          {episode.epNumber ? ` · Episode ${episode.epNumber}` : ""}
+        
         </p>
       </header>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
         <AdMarkersPanel />
-        <VideoPlayerPanel />
+        <VideoPlayerPanel episode={episode} />
       </div>
 
       <TimelinePanel />

@@ -16,7 +16,12 @@ import {
   createEpisode as createEpisodeInDb,
   subscribeEpisodes,
   type CreateEpisodeInput,
+  deleteEpisode as deleteEpisodeInDb,
+  uploadMp4 as uploadMp4InDb,
+  updateEpisode as updateEpisodeInDb,
 } from "@/lib/episodes-db"
+import { getVideoMetadata } from "@/lib/ads-editor-storage"
+import { persistLivePlayerProjectForMp4 } from "@/lib/live-player-project"
 import { waitForFirebaseAuthUser } from "@/lib/firebase-auth"
 import type { Episode } from "@/types/episode"
 
@@ -27,6 +32,11 @@ type EpisodeContextValue = {
   createEpisode: (input: Omit<CreateEpisodeInput, "creatorId">) => Promise<Episode>
   isCreating: boolean
   getEpisodeById: (id: string) => Episode | undefined
+  deleteEpisode: (episodeId: string) => Promise<void>
+  isImporting: boolean
+  uploadMp4: (episodeId: string, file: File) => Promise<string>
+  selectedEpisodeId: string | null
+  setSelectedEpisodeId: (episodeId: string | null) => void
 }
 
 const EpisodeContext = createContext<EpisodeContextValue | null>(null)
@@ -45,6 +55,8 @@ export function EpisodeProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isCreating, setIsCreating] = useState(false)
+  const [isImporting, setIsImporting] = useState(false)
+  const [selectedEpisodeId, setSelectedEpisodeId] = useState<string | null>(null)
 
   useEffect(() => {
     if (authLoading) return
@@ -130,6 +142,49 @@ export function EpisodeProvider({ children }: { children: ReactNode }) {
     },
     [user?.uid]
   )
+  const deleteEpisode = useCallback(
+    async (episodeId: string) => {
+      await deleteEpisodeInDb(episodeId)
+    },
+    []
+  )
+  const uploadMp4 = useCallback(
+    async (episodeId: string, file: File) => {
+      setIsImporting(true)
+      setError(null)
+      try {
+        const url = await uploadMp4InDb(episodeId, file)
+        const objectUrl = URL.createObjectURL(file)
+        try {
+          const { durationSeconds, width, height } =
+            await getVideoMetadata(objectUrl)
+          const episode = episodes.find((item) => item.id === episodeId)
+          await updateEpisodeInDb(episodeId, {
+            src: url,
+            duration: durationSeconds,
+          })
+          persistLivePlayerProjectForMp4(episodeId, {
+            src: url,
+            title: episode?.title ?? file.name,
+            durationSeconds,
+            width,
+            height,
+          })
+        } finally {
+          URL.revokeObjectURL(objectUrl)
+        }
+        return url
+      } catch (uploadError) {
+        const message =
+          uploadError instanceof Error
+            ? uploadError.message
+            : "Could not upload MP4"
+        setError(message)
+        throw uploadError
+      } finally {
+        setIsImporting(false)
+      }
+    }, [episodes])
 
   const value = useMemo(
     () => ({
@@ -139,8 +194,25 @@ export function EpisodeProvider({ children }: { children: ReactNode }) {
       createEpisode,
       isCreating,
       getEpisodeById,
+      deleteEpisode,
+      isImporting,
+      uploadMp4,
+      selectedEpisodeId,
+      setSelectedEpisodeId,
     }),
-    [episodes, isLoading, error, createEpisode, isCreating, getEpisodeById]
+    [
+      episodes,
+      isLoading,
+      error,
+      createEpisode,
+      isCreating,
+      getEpisodeById,
+      deleteEpisode,
+      isImporting,
+      uploadMp4,
+      selectedEpisodeId,
+      setSelectedEpisodeId,
+    ]
   )
 
   return (

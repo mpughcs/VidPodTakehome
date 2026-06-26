@@ -1,0 +1,17 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function isValidMp4Upload() {
+      return request.resource.size < 500 * 1024 * 1024  // 500 MB
+        && request.resource.contentType == 'video/mp4';
+    }
+    match /episodes/{episodeId}/{fileName} {
+      allow read: if isSignedIn();
+      allow create, update: if isSignedIn() && isValidMp4Upload();
+      allow delete: if isSignedIn();
+    }
+  }
+}

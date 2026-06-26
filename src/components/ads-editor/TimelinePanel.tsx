@@ -4,6 +4,7 @@ import { Redo2, Undo2, ZoomIn, ZoomOut } from "lucide-react"
 import { formatTimeSimple, useTimelineContext } from "@twick/timeline"
 
 import { TwickTimelineRenderer } from "@/components/ads-editor/timeline/TwickTimelineRenderer"
+import { useAdsTimeline } from "@/context/AdsTimelineContext"
 
 function TimelineToolbar() {
   const { canUndo, canRedo, editor } = useTimelineContext()
@@ -41,18 +42,22 @@ function TimelineToolbar() {
 }
 
 function TimelinePlayheadClock() {
+  const { currentTime } = useAdsTimeline()
+
   return (
     <span className="font-mono text-lg font-medium text-slate-800">
-      {formatTimeSimple(179)}
+      {formatTimeSimple(currentTime)}
     </span>
   )
 }
 
 export function TimelinePanel() {
+  const { episodeDurationSeconds } = useAdsTimeline()
+
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
       <TimelineToolbar />
-      <TwickTimelineRenderer />
+      <TwickTimelineRenderer durationSeconds={episodeDurationSeconds} />
     </div>
   )
 }

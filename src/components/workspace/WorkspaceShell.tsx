@@ -3,11 +3,11 @@
 import { useRouter } from "next/navigation"
 import type { ReactNode } from "react"
 
+import { ImportMp4Modal } from "@/components/ads-editor/ImportMp4Modal"
 import { CreateEpisodeModalHost } from "@/components/workspace/CreateEpisodePrompt"
 import { SignInPrompt } from "@/components/workspace/SignInPrompt"
 import { WorkspaceLayout } from "@/components/workspace/WorkspaceLayout"
 import { WorkspaceSidebar } from "@/components/workspace/WorkspaceSidebar"
-import { EpisodeProvider } from "@/context/EpisodeContext"
 import { useUser } from "@/context/UserContext"
 
 function WorkspaceGate({ children }: { children: ReactNode }) {
@@ -30,8 +30,9 @@ function WorkspaceGate({ children }: { children: ReactNode }) {
 
 export function WorkspaceShell({ children }: { children: ReactNode }) {
   return (
-    <EpisodeProvider>
+    <>
       <CreateEpisodeModalHost />
+      <ImportMp4Modal />
       <section
         id="features"
         aria-label="Podcast workspace"
@@ -41,7 +42,7 @@ export function WorkspaceShell({ children }: { children: ReactNode }) {
           <WorkspaceGate>{children}</WorkspaceGate>
         </WorkspaceLayout>
       </section>
-    </EpisodeProvider>
+    </>
   )
 }
 

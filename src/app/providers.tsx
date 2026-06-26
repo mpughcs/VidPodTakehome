@@ -2,6 +2,7 @@
 
 import { type ReactNode } from "react"
 
+import { EpisodeProvider } from "@/context/EpisodeContext"
 import { UserProvider } from "@/context/UserContext"
 import { getMissingFirebaseEnvKeys } from "@/lib/firebase-env"
 
@@ -36,7 +37,9 @@ function FirebaseEnvGuard({ children }: { children: ReactNode }) {
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <FirebaseEnvGuard>
-      <UserProvider>{children}</UserProvider>
+      <UserProvider>
+        <EpisodeProvider>{children}</EpisodeProvider>
+      </UserProvider>
     </FirebaseEnvGuard>
   )
 }

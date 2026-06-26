@@ -9,7 +9,9 @@ import {
   type TrackJSON,
 } from "@twick/timeline"
 
-import { episodeDurationSeconds } from "@/components/ads-editor/timeline/episode-timeline-data"
+import { useAdsTimeline } from "@/context/AdsTimelineContext"
+
+const FALLBACK_DURATION_SECONDS = 300
 
 const ELEMENT_COLORS: Record<string, string> = {
   episode: "bg-violet-300",
@@ -33,20 +35,27 @@ function getElementLabel(element: ElementJSON) {
 
 type TwickTimelineRendererProps = {
   durationSeconds?: number
-  initialPlayheadSeconds?: number
 }
 
 export function TwickTimelineRenderer({
-  durationSeconds = episodeDurationSeconds,
-  initialPlayheadSeconds = 179,
+  durationSeconds = FALLBACK_DURATION_SECONDS,
 }: TwickTimelineRendererProps) {
   const { present } = useTimelineContext()
+  const { currentTime, seekTo } = useAdsTimeline()
   const trackRef = useRef<HTMLDivElement>(null)
-  const [playhead, setPlayhead] = useState(initialPlayheadSeconds)
   const [zoom, setZoom] = useState(1)
 
   const tracks = present?.tracks ?? []
-  const visibleDuration = durationSeconds / zoom
+  const timelineDuration = useMemo(() => {
+    let maxEnd = 0
+    for (const track of tracks) {
+      for (const element of track.elements ?? []) {
+        maxEnd = Math.max(maxEnd, element.e)
+      }
+    }
+    return maxEnd || durationSeconds
+  }, [tracks, durationSeconds])
+  const visibleDuration = timelineDuration / zoom
 
   const timeLabels = useMemo(() => {
     const interval = visibleDuration <= 120 ? 30 : 60
@@ -63,9 +72,9 @@ export function TwickTimelineRenderer({
       if (!el) return
       const rect = el.getBoundingClientRect()
       const ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width))
-      setPlayhead(ratio * visibleDuration)
+      seekTo(ratio * visibleDuration)
     },
-    [visibleDuration]
+    [seekTo, visibleDuration]
   )
 
   return (
@@ -86,7 +95,7 @@ export function TwickTimelineRenderer({
           ))}
         </div>
 
-        <Playhead playhead={playhead} durationSeconds={visibleDuration} />
+        <Playhead playhead={currentTime} durationSeconds={visibleDuration} />
       </div>
 
       <div className="flex justify-between border-t border-slate-100 px-3 py-2 font-mono text-xs text-slate-400">
@@ -109,7 +118,7 @@ export function TwickTimelineRenderer({
       </div>
 
       <div className="border-t border-slate-100 px-3 py-2 text-center font-mono text-sm text-slate-700">
-        {formatTimeSimple(playhead)}
+        {formatTimeSimple(currentTime)}
       </div>
     </div>
   )
@@ -126,7 +135,7 @@ function TimelineTrackRow({
 
   return (
     <div className="relative h-14 overflow-hidden rounded-lg bg-white/60">
-     
+
 
       {track.elements.map((element) => {
         const left = (element.s / durationSeconds) * 100

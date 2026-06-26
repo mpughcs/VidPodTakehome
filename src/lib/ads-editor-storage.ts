@@ -1,6 +1,9 @@
 import type { ProjectJSON } from "@twick/timeline"
 
+import type { LivePlayerProjectData } from "@/types/live-player-project"
+
 const PROJECT_KEY_PREFIX = "ads-editor:project"
+const LIVE_PLAYER_PROJECT_KEY_PREFIX = "ads-editor:live-player-project"
 const DB_NAME = "ads-editor"
 const DB_VERSION = 1
 const VIDEO_STORE = "video-blobs"
@@ -65,6 +68,56 @@ export function loadProjectFromLocalStorage(
   }
 }
 
+export function saveLivePlayerProject(
+  episodeId: string,
+  project: LivePlayerProjectData
+) {
+  localStorage.setItem(
+    `${LIVE_PLAYER_PROJECT_KEY_PREFIX}:${episodeId}`,
+    JSON.stringify(project, null, 2)
+  )
+}
+
+export function loadLivePlayerProject(
+  episodeId: string
+): LivePlayerProjectData | null {
+  if (typeof window === "undefined") return null
+  const raw = localStorage.getItem(
+    `${LIVE_PLAYER_PROJECT_KEY_PREFIX}:${episodeId}`
+  )
+  if (!raw) return null
+  try {
+    return JSON.parse(raw) as LivePlayerProjectData
+  } catch {
+    return null
+  }
+}
+
+export type VideoMetadata = {
+  durationSeconds: number
+  width: number
+  height: number
+}
+
+export async function getVideoMetadata(
+  objectUrl: string
+): Promise<VideoMetadata> {
+  return new Promise((resolve, reject) => {
+    const video = document.createElement("video")
+    video.preload = "metadata"
+    video.onloadedmetadata = () => {
+      resolve({
+        durationSeconds: Number.isFinite(video.duration) ? video.duration : 30,
+        width: video.videoWidth || 1280,
+        height: video.videoHeight || 720,
+      })
+      video.remove()
+    }
+    video.onerror = () => reject(new Error("Could not read video metadata"))
+    video.src = objectUrl
+  })
+}
+
 export async function hydrateProjectAssets(
   project: ProjectJSON
 ): Promise<ProjectJSON> {
@@ -100,14 +153,6 @@ export async function hydrateProjectAssets(
 }
 
 export async function getVideoDurationSeconds(objectUrl: string): Promise<number> {
-  return new Promise((resolve, reject) => {
-    const video = document.createElement("video")
-    video.preload = "metadata"
-    video.onloadedmetadata = () => {
-      resolve(Number.isFinite(video.duration) ? video.duration : 30)
-      video.remove()
-    }
-    video.onerror = () => reject(new Error("Could not read video metadata"))
-    video.src = objectUrl
-  })
+  const metadata = await getVideoMetadata(objectUrl)
+  return metadata.durationSeconds
 }

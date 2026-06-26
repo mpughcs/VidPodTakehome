@@ -94,13 +94,14 @@ export function EpisodeDropdown() {
                     <button
                       type="button"
                       tabIndex={open ? 0 : -1}
-                      disabled={!activeEpisodeId}
+                      disabled={episodes.length === 0}
                       onClick={() => {
-                        if (activeEpisodeId) openImportMp4Modal()
+                        setOpen(false)
+                        openImportMp4Modal(activeEpisodeId ?? undefined)
                       }}
                       className={clsx(
                         "relative left-16 flex w-full items-center gap-3 rounded-lg border-0 bg-transparent px-2 py-1.5 text-left font-bold shadow-none transition-colors focus-visible:outline-none",
-                        activeEpisodeId
+                        episodes.length > 0
                           ? "text-slate-500 hover:bg-slate-200/60"
                           : "cursor-not-allowed text-slate-300"
                       )}

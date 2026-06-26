@@ -7,5 +7,5 @@ export type Episode = {
   uploadDate: string
   creatorId: string
   src?: string
-  epNumber?: number
+  epNumber: number
 }

@@ -12,13 +12,14 @@ import {
 } from "react"
 import {
   TimelineProvider,
-  VideoElement,
-  TRACK_TYPES,
   useTimelineContext,
   type ProjectJSON,
 } from "@twick/timeline"
 
-import { buildEpisodeTimelineProject } from "@/components/ads-editor/timeline/episode-timeline-data"
+import {
+  buildEpisodeTimelineProject,
+  patchEpisodeDuration,
+} from "@/components/ads-editor/timeline/episode-timeline-data"
 import {
   createAdMarker,
   deleteAdMarker,
@@ -28,11 +29,9 @@ import {
 import { syncAdMarkersToEditor } from "@/lib/ad-markers-timeline"
 import { waitForFirebaseAuthUser } from "@/lib/firebase-auth"
 import {
-  getVideoDurationSeconds,
   hydrateProjectAssets,
   loadProjectFromLocalStorage,
   saveProjectToLocalStorage,
-  saveVideoBlob,
 } from "@/lib/ads-editor-storage"
 import type {
   AdMarker,
@@ -41,12 +40,15 @@ import type {
   UpdateAdMarkerInput,
 } from "@/types/ad-marker"
 
-const IMPORT_TRACK_NAME = "Imported clips"
-const VIDEO_RESOLUTION = { width: 720, height: 480 }
 const TIMELINE_CONTEXT_ID = "ads-editor-timeline"
 
 type AdsTimelineContextValue = {
   episodeId: string
+  episodeDurationSeconds: number
+  currentTime: number
+  setCurrentTime: (seconds: number) => void
+  seekTo: (seconds: number) => void
+  seekTime: number
   adMarkers: AdMarker[]
   isLoadingMarkers: boolean
   markersError: string | null
@@ -54,8 +56,6 @@ type AdsTimelineContextValue = {
   updateMarker: (markerId: string, input: UpdateAdMarkerInput) => Promise<void>
   removeMarker: (markerId: string) => Promise<void>
   autoPlaceMarkers: () => Promise<void>
-  importMp4: (file: File) => Promise<void>
-  isImporting: boolean
 }
 
 const AdsTimelineContext = createContext<AdsTimelineContextValue | null>(null)
@@ -99,8 +99,38 @@ function AdsTimelineInner({
   const [adMarkers, setAdMarkers] = useState<AdMarker[]>([])
   const [isLoadingMarkers, setIsLoadingMarkers] = useState(true)
   const [markersError, setMarkersError] = useState<string | null>(null)
-  const [isImporting, setIsImporting] = useState(false)
   const skipNextSyncRef = useRef(false)
+  const [currentTime, setCurrentTimeState] = useState(0)
+  const [seekTime, setSeekTime] = useState(0)
+
+  const setCurrentTime = useCallback((seconds: number) => {
+    setCurrentTimeState(seconds)
+  }, [])
+
+  const seekTo = useCallback(
+    (seconds: number) => {
+      const clamped = Math.max(0, Math.min(seconds, episodeDurationSeconds))
+      setCurrentTimeState(clamped)
+      setSeekTime(clamped)
+    },
+    [episodeDurationSeconds]
+  )
+
+  useEffect(() => {
+    setCurrentTimeState(0)
+    setSeekTime(0)
+  }, [episodeId])
+
+  useEffect(() => {
+    const project = editor.getProject()
+    const episodeElement = project.tracks
+      .flatMap((track) => track.elements)
+      .find((element) => element.props?.role === "episode")
+
+    if (episodeElement && episodeElement.e !== episodeDurationSeconds) {
+      editor.loadProject(patchEpisodeDuration(project, episodeDurationSeconds))
+    }
+  }, [editor, episodeDurationSeconds])
 
   const syncTimeline = useCallback(
     (markers: AdMarker[]) => {
@@ -202,83 +232,17 @@ function AdsTimelineInner({
     }
   }, [adMarkers, episodeId])
 
-  const importMp4 = useCallback(
-    async (file: File) => {
-      setIsImporting(true)
-      try {
-        const assetId = crypto.randomUUID()
-        await saveVideoBlob(assetId, file)
 
-        const objectUrl = URL.createObjectURL(file)
-        const duration = await getVideoDurationSeconds(objectUrl)
 
-        let track = editor.getTrackByName(IMPORT_TRACK_NAME)
-        if (!track) {
-          track = editor.addTrack(IMPORT_TRACK_NAME, TRACK_TYPES.VIDEO)
-        }
-
-        const lastEnd = track
-          .getElements()
-          .reduce((max, element) => Math.max(max, element.getEnd()), 0)
-
-        const start = lastEnd
-        const end = Math.min(start + duration, episodeDurationSeconds)
-
-        const videoElement = new VideoElement(objectUrl, VIDEO_RESOLUTION)
-          .setStart(start)
-          .setEnd(end)
-          .setName(file.name.replace(/\.mp4$/i, ""))
-
-        await editor.addElementToTrack(track, videoElement)
-
-        const project = editor.getProject()
-        const nextProject: ProjectJSON = {
-          ...project,
-          assets: {
-            ...project.assets,
-            [assetId]: {
-              id: assetId,
-              type: "video",
-              url: objectUrl,
-              duration: duration * 1000,
-            },
-          },
-          tracks: project.tracks.map((t) =>
-            t.id === track!.getId()
-              ? {
-                  ...t,
-                  elements: t.elements.map((el) => {
-                    const isNew =
-                      el.name === videoElement.getName() && el.s === start
-                    if (!isNew) return el
-                    return {
-                      ...el,
-                      props: {
-                        ...el.props,
-                        imported: true,
-                        srcAssetId: assetId,
-                        src: objectUrl,
-                      },
-                    }
-                  }),
-                }
-              : t
-          ),
-        }
-
-        skipNextSyncRef.current = true
-        editor.loadProject(nextProject)
-        saveProjectToLocalStorage(nextProject, episodeId)
-      } finally {
-        setIsImporting(false)
-      }
-    },
-    [editor, episodeDurationSeconds, episodeId]
-  )
 
   const value = useMemo(
     () => ({
       episodeId,
+      episodeDurationSeconds,
+      currentTime,
+      setCurrentTime,
+      seekTo,
+      seekTime,
       adMarkers,
       isLoadingMarkers,
       markersError,
@@ -286,11 +250,14 @@ function AdsTimelineInner({
       updateMarker,
       removeMarker,
       autoPlaceMarkers,
-      importMp4,
-      isImporting,
     }),
     [
       episodeId,
+      episodeDurationSeconds,
+      currentTime,
+      setCurrentTime,
+      seekTo,
+      seekTime,
       adMarkers,
       isLoadingMarkers,
       markersError,
@@ -298,8 +265,6 @@ function AdsTimelineInner({
       updateMarker,
       removeMarker,
       autoPlaceMarkers,
-      importMp4,
-      isImporting,
     ]
   )
 
@@ -322,9 +287,12 @@ export function AdsTimelineProvider({
   useEffect(() => {
     async function load() {
       const stored = loadProjectFromLocalStorage(episodeId)
-      const baseProject = stored
-        ? await hydrateProjectAssets(stored)
-        : buildEpisodeTimelineProject(episodeTitle, episodeDurationSeconds)
+      const baseProject = patchEpisodeDuration(
+        stored
+          ? await hydrateProjectAssets(stored)
+          : buildEpisodeTimelineProject(episodeTitle, episodeDurationSeconds),
+        episodeDurationSeconds
+      )
 
       setInitialData(baseProject)
     }

@@ -4,7 +4,6 @@ import Link from "next/link"
 import { useParams } from "next/navigation"
 
 import { AdsEditor } from "@/components/ads-editor/AdsEditor"
-import { ImportMp4Modal } from "@/components/ads-editor/ImportMp4Modal"
 import { WorkspaceShell } from "@/components/workspace/WorkspaceShell"
 import { AdsTimelineProvider } from "@/context/AdsTimelineContext"
 import { useEpisodes } from "@/context/EpisodeContext"
@@ -53,7 +52,6 @@ function EpisodeEditorContent() {
       episodeTitle={episode.title}
       episodeDurationSeconds={episode.duration}
     >
-      <ImportMp4Modal />
       <AdsEditor episode={episode} />
     </AdsTimelineProvider>
   )

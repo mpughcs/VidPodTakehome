@@ -8,13 +8,12 @@ import {
   PopoverPanel,
 } from "@headlessui/react"
 import clsx from "clsx"
+import { CiBellOn, CiSettings } from "react-icons/ci"
 
-import { Button } from "@/components/Button"
 import { Container } from "@/components/Container"
+import { HeaderUserMenu } from "@/components/HeaderUserMenu"
 import { Logo } from "@/components/Logo"
-import { NavLink } from "@/components/NavLink"
-import { CiSettings, CiBellOn } from "react-icons/ci";
-
+import { useUser } from "@/context/UserContext"
 
 function MobileNavLink({
   href,
@@ -55,6 +54,8 @@ function MobileNavIcon({ open }: { open: boolean }) {
 }
 
 function MobileNavigation() {
+  const { isAuthenticated, email, displayName, logout } = useUser()
+
   return (
     <Popover>
       <PopoverButton
@@ -71,11 +72,25 @@ function MobileNavigation() {
         transition
         className="absolute inset-x-0 top-full mt-4 flex origin-top flex-col rounded-2xl bg-surface p-4 text-lg tracking-tight text-text-primary ring-1 shadow-xl ring-surface-invert/5 data-closed:scale-95 data-closed:opacity-0 data-enter:duration-150 data-enter:ease-out data-leave:duration-100 data-leave:ease-in"
       >
-        <MobileNavLink href="#features">Features</MobileNavLink>
-        <MobileNavLink href="#testimonials">Testimonials</MobileNavLink>
-        <MobileNavLink href="#pricing">Pricing</MobileNavLink>
-        <hr className="m-2 border-border-strong/40" />
-        <MobileNavLink href="/login">Sign in</MobileNavLink>
+        {isAuthenticated ? (
+          <>
+            <div className="mb-2 px-2 py-1 text-sm text-slate-500">
+              <p className="font-semibold text-slate-900">
+                {displayName || "Account"}
+              </p>
+              {email && <p className="truncate">{email}</p>}
+            </div>
+            <button
+              type="button"
+              className="block w-full p-2 text-left"
+              onClick={() => logout()}
+            >
+              Sign out
+            </button>
+          </>
+        ) : (
+          <MobileNavLink href="/login">Sign in</MobileNavLink>
+        )}
       </PopoverPanel>
     </Popover>
   )
@@ -83,24 +98,19 @@ function MobileNavigation() {
 
 export function Header() {
   return (
-    <header className="pt-10 pb-4 border-b-2">
+    <header className="border-b-2 pb-4 pt-10">
       <Container>
         <nav className="relative flex justify-between font-lexend">
           <div className="flex items-center md:gap-x-12">
-            <Link href="#" aria-label="Home">
+            <Link href="/" aria-label="Home">
               <Logo className="h-10 w-auto" />
             </Link>
-
           </div>
-          <div className="md:flex hidden items-center gap-x-5 md:gap-x-8">
-
+          <div className="hidden items-center gap-x-5 md:flex md:gap-x-8">
             <div className="flex items-center gap-6">
               <CiSettings className="text-2xl" />
               <CiBellOn className="text-2xl" />
-              <button className="btn bg-white text-black border-[#e5e5e5]">
-                <svg aria-label="Email icon" width="16" height="16" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g strokeLinejoin="round" strokeLinecap="round" strokeWidth="2" fill="none" stroke="black"><rect width="20" height="16" x="2" y="4" rx="2"></rect><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path></g></svg>
-                Login with Email
-              </button>
+              <HeaderUserMenu />
             </div>
           </div>
           <div className="-mr-1 md:hidden">

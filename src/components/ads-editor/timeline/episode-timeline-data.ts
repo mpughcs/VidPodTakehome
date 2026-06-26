@@ -1,6 +1,6 @@
 import type { ProjectJSON } from "@twick/timeline"
 
-const EPISODE_DURATION = 300 // 5 minutes
+const EPISODE_DURATION = 300 
 
 export function buildEpisodeTimelineProject(
   title: string,
@@ -32,6 +32,32 @@ export function buildEpisodeTimelineProject(
         elements: [],
       },
     ],
+  }
+}
+
+export function patchEpisodeDuration(
+  project: ProjectJSON,
+  durationSeconds: number
+): ProjectJSON {
+  return {
+    ...project,
+    tracks: project.tracks.map((track) => {
+      const isEpisodeTrack =
+        track.id === "track-episode" ||
+        track.name === "Episode" ||
+        track.elements.some((el) => el.props?.role === "episode")
+
+      if (!isEpisodeTrack) return track
+
+      return {
+        ...track,
+        elements: track.elements.map((element) =>
+          element.props?.role === "episode"
+            ? { ...element, e: durationSeconds }
+            : element
+        ),
+      }
+    }),
   }
 }
 

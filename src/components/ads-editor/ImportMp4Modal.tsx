@@ -1,21 +1,44 @@
 "use client"
 
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 
-import { useAdsTimeline } from "@/context/AdsTimelineContext"
+import { useEpisodes } from "@/context/EpisodeContext"
 
 const MODAL_ID = "import-mp4-modal"
 
-export function openImportMp4Modal() {
+let openModalHandler: ((episodeId?: string) => void) | null = null
+
+export function openImportMp4Modal(episodeId?: string) {
+  openModalHandler?.(episodeId)
   const dialog = document.getElementById(MODAL_ID) as HTMLDialogElement | null
   dialog?.showModal()
 }
 
 export function ImportMp4Modal() {
-  const { importMp4, isImporting } = useAdsTimeline()
+  const {
+    episodes,
+    uploadMp4,
+    isImporting,
+    selectedEpisodeId,
+    setSelectedEpisodeId,
+  } = useEpisodes()
   const inputRef = useRef<HTMLInputElement>(null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [uploadError, setUploadError] = useState<string | null>(null)
+
+  useEffect(() => {
+    openModalHandler = (episodeId?: string) => {
+      setSelectedEpisodeId(
+        episodeId ?? episodes[0]?.id ?? null
+      )
+      setSelectedFile(null)
+      setUploadError(null)
+      if (inputRef.current) inputRef.current.value = ""
+    }
+    return () => {
+      openModalHandler = null
+    }
+  }, [episodes, setSelectedEpisodeId])
 
   function handleFileChange(file: File | undefined) {
     if (!file) {
@@ -45,6 +68,28 @@ export function ImportMp4Modal() {
           Upload an episode or ad clip. Only `.mp4` files are supported for now.
         </p>
 
+        {episodes.length > 0 ? (
+          <label className="form-control w-full">
+            <span className="label-text mb-1 text-sm font-medium">Episode</span>
+            <select
+              className="select select-bordered w-full"
+              value={selectedEpisodeId ?? ""}
+              onChange={(e) => setSelectedEpisodeId(e.target.value || null)}
+            >
+              <option value="" disabled>
+                Select an episode
+              </option>
+              {episodes.map((episode) => (
+                <option key={episode.id} value={episode.id}>
+                  {episode.title}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : (
+          <p className="text-sm text-slate-500">Create an episode first.</p>
+        )}
+
         <input
           ref={inputRef}
           type="file"
@@ -72,12 +117,12 @@ export function ImportMp4Modal() {
           <button
             type="button"
             className="btn btn-primary"
-            disabled={!selectedFile || isImporting}
+            disabled={!selectedFile || isImporting || !selectedEpisodeId}
             onClick={async () => {
               if (!selectedFile) return
               setUploadError(null)
               try {
-                await importMp4(selectedFile)
+                await uploadMp4(selectedEpisodeId!, selectedFile)
                 resetAndClose()
                 ;(document.getElementById(MODAL_ID) as HTMLDialogElement | null)?.close()
               } catch (error) {
