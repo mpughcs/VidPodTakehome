@@ -412,8 +412,11 @@ function AdsTimelineInner({
     async (input: CreateAdMarkerInput) => {
       setMarkersError(null)
       await createAdMarker(episodeId, input)
+      if (input.startSeconds > 0) {
+        seekTo(Math.max(0, input.startSeconds - 1))
+      }
     },
-    [episodeId]
+    [episodeId, seekTo]
   )
 
   const updateMarker = useCallback(

@@ -3,7 +3,7 @@
 Hi Rox! I had a great time building this. I found the project both challenging and rewarding, and I'm excited to share what i've got. I had to take some creative liberties while replicating the figma mockup, namely, the creation of new episodes, how auth is handled, etc. 
 
 ## Upload Episodes and Ads
-![Example of uploading MP4](./public/examplGif.gif)
+![Example of uploading MP4](./examplGif.gif)
 
 
 
@@ -24,6 +24,7 @@ Hi Rox! I had a great time building this. I found the project both challenging a
 ## Quick start
 
 ```bash
+git clone https://github.com/mpughcs/VidPodTakehome.git 
 npm install
 npm run dev
 ```
@@ -113,12 +114,9 @@ Preview playback is **custom** (`InterstitialPreview` + dual `<video>`) so inter
 
 Honest list of what’s still thin or would get another pass in a real sprint:
 
-1. ~~**Auto mode playback**~~ — done (random ad from library)
-2. ~~**A/B playback**~~ — done (random pick among selected ads; preview only)
-3. ~~**Video player scrub bar**~~ — done
-4. **Undo after drag** — mostly there via Twick + careful Firestore sync; if something feels off, look at `syncAdMarkersToEditor` and subscription echo
+1. When first attempting the project, I tried to add advertisement tracks on the same track as the episode, and I had a lot of trouble getting this to work the way I wanted. I pivoted to handle ad placement and the video playback separatly, but because of this I had to compromise on how ads are actually shown in the editing feed. Instead of the add actually being inserted in the episode source, now the add is made to be the primary track and plays simultaniously with the episode hidden until the end of the ad, or until skip ad is pressed. This insn't a perfect solution, and if I had more time, I would design a more robust system to handle ad insertion. 
+4. **Undo after drag** — mostly there via Twick + careful Firestore sync; 
 5. **Analytics / “find the best ad”** — A/B is storage + UI only; no metrics or winner selection yet
-6. **Form edits via modal** — changing mode/ad on an existing marker is Firestore-first; undo may not revert those unless they also hit the timeline
 
 ---
 
@@ -132,8 +130,6 @@ Honest list of what’s still thin or would get another pass in a real sprint:
 ---
 
 ## Notes for reviewers
-
-A few things that tripped me up and might save you time:
 
 - You need to be signed in for markers, ads, and uploads (no self-serve sign-up — see [Limitations](#limitations)).
 - **Automatic placement** in the markers panel seeds demo markers (auto / static / A/B) at fixed times — quick way to test playback without placing everything by hand.
