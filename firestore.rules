@@ -13,5 +13,9 @@ service cloud.firestore {
         allow read, write: if isSignedIn();
       }
     }
+
+    match /ads/{adId} {
+      allow read, write: if isSignedIn();
+    }
   }
 }

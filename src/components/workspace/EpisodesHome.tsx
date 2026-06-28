@@ -89,7 +89,7 @@ export function EpisodesHome() {
             The Diary Of A CEO
           </p>
           <h1 className="mt-1 text-2xl font-semibold text-slate-900 lg:text-3xl">
-            Episodes
+            Episode Ad Editor
           </h1>
           <p className="mt-2 text-sm text-slate-500">
             All team members can create and open episodes for this channel.

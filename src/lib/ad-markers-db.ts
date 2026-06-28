@@ -8,6 +8,7 @@ import {
   orderBy,
   query,
   serverTimestamp,
+  setDoc,
   updateDoc,
   type Unsubscribe,
 } from "firebase/firestore"
@@ -25,6 +26,8 @@ type FirestoreAdMarker = {
   startSeconds: number
   endSeconds: number
   mode: AdMarkerMode
+  adId?: string
+  adIds?: string[]
   createdAt?: { toDate: () => Date }
   updatedAt?: { toDate: () => Date }
 }
@@ -44,6 +47,8 @@ function toAdMarker(
     startSeconds: data.startSeconds,
     endSeconds: data.endSeconds,
     mode: data.mode,
+    adId: data.adId,
+    adIds: data.adIds,
     createdAt: data.createdAt?.toDate().toISOString() ?? new Date().toISOString(),
     updatedAt: data.updatedAt?.toDate().toISOString() ?? new Date().toISOString(),
   }
@@ -83,21 +88,24 @@ export async function createAdMarker(
   episodeId: string,
   input: CreateAdMarkerInput
 ): Promise<AdMarker> {
-  const docRef = await addDoc(markersCollection(episodeId), {
+  const payload: FirestoreAdMarker = {
     episodeId,
     startSeconds: input.startSeconds,
     endSeconds: input.endSeconds,
     mode: input.mode,
+    ...(input.adId ? { adId: input.adId } : {}),
+    ...(input.adIds?.length ? { adIds: input.adIds } : {}),
+  }
+
+  const docRef = await addDoc(markersCollection(episodeId), {
+    ...payload,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   })
 
   return {
     id: docRef.id,
-    episodeId,
-    startSeconds: input.startSeconds,
-    endSeconds: input.endSeconds,
-    mode: input.mode,
+    ...payload,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   }
@@ -121,6 +129,25 @@ export async function deleteAdMarker(
 ): Promise<void> {
   const docRef = doc(getFirebaseFirestore(), "episodes", episodeId, "adMarkers", markerId)
   await deleteDoc(docRef)
+}
+
+/** Recreate a marker with a fixed id (undo restore / timeline sync). */
+export async function restoreAdMarker(
+  episodeId: string,
+  markerId: string,
+  input: CreateAdMarkerInput
+): Promise<void> {
+  const docRef = doc(getFirebaseFirestore(), "episodes", episodeId, "adMarkers", markerId)
+  await setDoc(docRef, {
+    episodeId,
+    startSeconds: input.startSeconds,
+    endSeconds: input.endSeconds,
+    mode: input.mode,
+    ...(input.adId ? { adId: input.adId } : {}),
+    ...(input.adIds?.length ? { adIds: input.adIds } : {}),
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  })
 }
 
 const DEFAULT_SEED_MARKERS: CreateAdMarkerInput[] = [

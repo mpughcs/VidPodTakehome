@@ -8,12 +8,101 @@ import {
   PopoverPanel,
 } from "@headlessui/react"
 import clsx from "clsx"
+import type { ElementType, ReactNode } from "react"
 import { CiBellOn, CiSettings } from "react-icons/ci"
 
 import { Container } from "@/components/Container"
 import { HeaderUserMenu } from "@/components/HeaderUserMenu"
 import { Logo } from "@/components/Logo"
 import { useUser } from "@/context/UserContext"
+
+function HeaderIconDropdown({
+  icon: Icon,
+  label,
+  children,
+}: {
+  icon: ElementType
+  label: string
+  children: ReactNode
+}) {
+  return (
+    <div className="dropdown dropdown-end">
+      <button
+        type="button"
+        tabIndex={0}
+        aria-label={label}
+        className="btn btn-ghost btn-sm btn-square rounded-lg text-slate-600 hover:bg-slate-100"
+      >
+        <Icon className="text-2xl" />
+      </button>
+      <div
+        tabIndex={0}
+        className="dropdown-content z-50 mt-2 w-72 rounded-xl border border-slate-100 bg-white p-0 shadow-lg"
+      >
+        {children}
+      </div>
+    </div>
+  )
+}
+
+function NotificationsDropdown() {
+  return (
+    <HeaderIconDropdown icon={CiBellOn} label="Notifications">
+      <div className="border-b border-slate-100 px-4 py-3">
+        <p className="font-semibold text-slate-900">Notifications</p>
+        <p className="mt-0.5 text-xs text-slate-500">Recent activity</p>
+      </div>
+      <ul className="menu p-2">
+        <li>
+          <button type="button" className="flex flex-col items-start gap-0.5 py-2">
+            <span className="text-sm font-medium text-slate-900">
+              Episode export ready
+            </span>
+            <span className="text-xs text-slate-500">2 hours ago</span>
+          </button>
+        </li>
+        <li>
+          <button type="button" className="flex flex-col items-start gap-0.5 py-2">
+            <span className="text-sm font-medium text-slate-900">
+              New ad marker saved
+            </span>
+            <span className="text-xs text-slate-500">Yesterday</span>
+          </button>
+        </li>
+        <li className="border-t border-slate-100 pt-1">
+          <button type="button" className="text-sm text-slate-500">
+            View all notifications
+          </button>
+        </li>
+      </ul>
+    </HeaderIconDropdown>
+  )
+}
+
+function SettingsDropdown() {
+  return (
+    <HeaderIconDropdown icon={CiSettings} label="Settings">
+      <div className="border-b border-slate-100 px-4 py-3">
+        <p className="font-semibold text-slate-900">Settings</p>
+        <p className="mt-0.5 text-xs text-slate-500">Workspace & account</p>
+      </div>
+      <ul className="menu p-2">
+        <li>
+          <button type="button">Workspace preferences</button>
+        </li>
+        <li>
+          <button type="button">Notification settings</button>
+        </li>
+        <li>
+          <button type="button">Billing & plan</button>
+        </li>
+        <li className="border-t border-slate-100 pt-1">
+          <button type="button">Help & support</button>
+        </li>
+      </ul>
+    </HeaderIconDropdown>
+  )
+}
 
 function MobileNavLink({
   href,
@@ -107,9 +196,9 @@ export function Header() {
             </Link>
           </div>
           <div className="hidden items-center gap-x-5 md:flex md:gap-x-8">
-            <div className="flex items-center gap-6">
-              <CiSettings className="text-2xl" />
-              <CiBellOn className="text-2xl" />
+            <div className="flex items-center gap-2">
+              <SettingsDropdown />
+              <NotificationsDropdown />
               <HeaderUserMenu />
             </div>
           </div>

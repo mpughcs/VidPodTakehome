@@ -7,7 +7,12 @@ import {
   AdMarkerFormModal,
   openAdMarkerForm,
 } from "@/components/ads-editor/AdMarkerFormModal"
+import {
+  CreateAdModal,
+  openCreateAdModal,
+} from "@/components/ads-editor/CreateAdModal"
 import { useAdsTimeline } from "@/context/AdsTimelineContext"
+import { useEpisodes } from "@/context/EpisodeContext"
 import {
   formatMarkerTime,
   type AdMarkerMode,
@@ -26,6 +31,7 @@ const MODE_CLASSES: Record<AdMarkerMode, string> = {
 }
 
 export function AdMarkersPanel() {
+  const { selectedEpisodeHasSrc } = useEpisodes() || false;
   const {
     adMarkers,
     isLoadingMarkers,
@@ -49,7 +55,7 @@ export function AdMarkersPanel() {
 
   return (
     <>
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div className="ads-editor-markers rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-slate-900">Ad markers</h2>
           <span className="text-sm text-slate-400">
@@ -103,9 +109,14 @@ export function AdMarkersPanel() {
             </li>
           ))}
 
-          {!isLoadingMarkers && adMarkers.length === 0 && (
+          {!isLoadingMarkers && adMarkers.length === 0 && Boolean(selectedEpisodeHasSrc) && (
             <li className="rounded-xl border border-dashed border-slate-200 px-3 py-6 text-center text-sm text-slate-400">
               No ad markers yet. Create one or use automatic placement.
+            </li>
+          )}
+          {!isLoadingMarkers && adMarkers.length === 0 && !Boolean(selectedEpisodeHasSrc) && (
+            <li className="rounded-xl border border-dashed border-slate-200 px-3 py-6 text-center text-sm text-slate-400">
+              No ad markers yet. Import an MP4 to create markers.
             </li>
           )}
         </ul>
@@ -113,13 +124,15 @@ export function AdMarkersPanel() {
         <div className="mt-5 flex flex-col gap-2">
           <button
             type="button"
+            disabled={!selectedEpisodeHasSrc}
             className="btn btn-neutral w-full rounded-xl"
-            onClick={() => openAdMarkerForm({ mode: "create", marker: null })}
+            onClick={() => openCreateAdModal()}
           >
             Create ad marker +
           </button>
           <button
             type="button"
+            disabled={!selectedEpisodeHasSrc}
             className="btn btn-outline w-full rounded-xl border-slate-200 bg-white"
             onClick={() => autoPlaceMarkers()}
           >
@@ -128,6 +141,7 @@ export function AdMarkersPanel() {
         </div>
       </div>
 
+      <CreateAdModal onSubmit={createMarker} />
       <AdMarkerFormModal onSubmit={handleSubmit} />
     </>
   )

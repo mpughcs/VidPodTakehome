@@ -69,10 +69,10 @@ export function ImportMp4Modal() {
         </p>
 
         {episodes.length > 0 ? (
-          <label className="form-control w-full">
+          <label className="form-control w-full mb-">
             <span className="label-text mb-1 text-sm font-medium">Episode</span>
             <select
-              className="select select-bordered w-full"
+              className="select select-[bordered] w-full bg-slate-100"
               value={selectedEpisodeId ?? ""}
               onChange={(e) => setSelectedEpisodeId(e.target.value || null)}
             >
@@ -94,7 +94,7 @@ export function ImportMp4Modal() {
           ref={inputRef}
           type="file"
           accept="video/mp4,.mp4"
-          className="file-input file-input-ghost w-full"
+          className="file-input file-input-ghost w-full mt-5"
           onChange={(e) => handleFileChange(e.target.files?.[0])}
         />
 
@@ -124,7 +124,7 @@ export function ImportMp4Modal() {
               try {
                 await uploadMp4(selectedEpisodeId!, selectedFile)
                 resetAndClose()
-                ;(document.getElementById(MODAL_ID) as HTMLDialogElement | null)?.close()
+                  ; (document.getElementById(MODAL_ID) as HTMLDialogElement | null)?.close()
               } catch (error) {
                 setUploadError(
                   error instanceof Error ? error.message : "Upload failed"

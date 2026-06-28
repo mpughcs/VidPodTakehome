@@ -51,6 +51,7 @@ function EpisodeEditorContent() {
       episodeId={episode.id}
       episodeTitle={episode.title}
       episodeDurationSeconds={episode.duration}
+      episodeSrc={episode.src}
     >
       <AdsEditor episode={episode} />
     </AdsTimelineProvider>

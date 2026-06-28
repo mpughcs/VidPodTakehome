@@ -13,5 +13,10 @@ service firebase.storage {
       allow create, update: if isSignedIn() && isValidMp4Upload();
       allow delete: if isSignedIn();
     }
+    match /ads/{adFile} {
+      allow read: if isSignedIn();
+      allow create, update: if isSignedIn() && isValidMp4Upload();
+      allow delete: if isSignedIn();
+    }
   }
 }

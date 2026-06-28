@@ -37,6 +37,7 @@ type EpisodeContextValue = {
   uploadMp4: (episodeId: string, file: File) => Promise<string>
   selectedEpisodeId: string | null
   setSelectedEpisodeId: (episodeId: string | null) => void
+  selectedEpisodeHasSrc: boolean
 }
 
 const EpisodeContext = createContext<EpisodeContextValue | null>(null)
@@ -115,6 +116,12 @@ export function EpisodeProvider({ children }: { children: ReactNode }) {
     (id: string) => episodes.find((episode) => episode.id === id),
     [episodes]
   )
+
+  const selectedEpisodeHasSrc = useMemo(() => {
+    if (!selectedEpisodeId) return false
+    const episode = episodes.find((item) => item.id === selectedEpisodeId)
+    return Boolean(episode?.src)
+  }, [episodes, selectedEpisodeId])
 
   const createEpisode = useCallback(
     async (input: Omit<CreateEpisodeInput, "creatorId">) => {
@@ -199,6 +206,7 @@ export function EpisodeProvider({ children }: { children: ReactNode }) {
       uploadMp4,
       selectedEpisodeId,
       setSelectedEpisodeId,
+      selectedEpisodeHasSrc,
     }),
     [
       episodes,
@@ -212,6 +220,7 @@ export function EpisodeProvider({ children }: { children: ReactNode }) {
       uploadMp4,
       selectedEpisodeId,
       setSelectedEpisodeId,
+      selectedEpisodeHasSrc,
     ]
   )
 

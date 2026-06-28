@@ -6,6 +6,8 @@ export type AdMarker = {
   startSeconds: number
   endSeconds: number
   mode: AdMarkerMode
+  adId?: string
+  adIds?: string[]
   createdAt: string
   updatedAt: string
 }
@@ -14,6 +16,8 @@ export type CreateAdMarkerInput = {
   startSeconds: number
   endSeconds: number
   mode: AdMarkerMode
+  adId?: string
+  adIds?: string[]
 }
 
 export type UpdateAdMarkerInput = Partial<CreateAdMarkerInput>

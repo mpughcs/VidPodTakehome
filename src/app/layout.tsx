@@ -8,11 +8,11 @@ import { Providers } from "./providers"
 
 export const metadata: Metadata = {
   title: {
-    template: "%s - Clippings",
-    default: "Clippings - All your press, one place",
+    template: "%s - VidPod",
+    default: "VidPod - In browser video ad editor",
   },
   description:
-    "Most bookkeeping software is accurate, but hard to use. We make the opposite trade-off, and hope you don’t get audited.",
+    "VidPod is a platform for creating and editing videos with ease.",
 }
 
 const inter = Inter({

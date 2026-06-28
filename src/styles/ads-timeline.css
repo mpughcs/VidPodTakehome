@@ -1,0 +1,195 @@
+/* Scoped timeline chrome — Twick track/ruler look without global video-editor.css */
+
+.ads-custom-timeline {
+  --ads-timeline-slate-50: #f8fafc;
+  --ads-timeline-slate-100: #f1f5f9;
+  --ads-timeline-slate-200: #e2e8f0;
+  --ads-timeline-slate-400: #94a3b8;
+  --ads-timeline-slate-500: #64748b;
+  --ads-timeline-slate-700: #334155;
+  --ads-timeline-playhead: #ef4444;
+}
+
+.ads-custom-timeline .ads-timeline-scroll {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 220px;
+  overflow: hidden;
+  border: 1px solid var(--ads-timeline-slate-200);
+  border-radius: 1rem;
+  background: var(--ads-timeline-slate-50);
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+}
+
+.ads-custom-timeline .ads-timeline-ruler {
+  position: relative;
+  display: flex;
+  width: 100%;
+  height: 2rem;
+  border-bottom: 1px solid var(--ads-timeline-slate-100);
+  background: #fff;
+}
+
+.ads-custom-timeline .ads-timeline-ruler-gutter {
+  position: sticky;
+  left: 0;
+  z-index: 20;
+  flex: none;
+  width: 40px;
+  background: #fff;
+  border-right: 1px solid var(--ads-timeline-slate-100);
+}
+
+.ads-custom-timeline .ads-timeline-ruler-track {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+}
+
+.ads-custom-timeline .ads-timeline-ruler-labels {
+  display: flex;
+  justify-content: space-between;
+  height: 100%;
+  padding: 0 0.5rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.65rem;
+  line-height: 2rem;
+  color: var(--ads-timeline-slate-400);
+}
+
+.ads-custom-timeline .ads-timeline-tracks {
+  position: relative;
+  padding: 0.25rem 0.75rem 0.75rem;
+}
+
+.ads-custom-timeline .ads-timeline-track-row {
+  position: relative;
+  display: flex;
+  min-width: 100%;
+  height: 3.5rem;
+  margin-top: 2px;
+}
+
+.ads-custom-timeline .ads-timeline-track-gutter {
+  position: sticky;
+  left: 0;
+  z-index: 10;
+  flex: none;
+  width: 40px;
+  background: #fff;
+  border-right: 1px solid var(--ads-timeline-slate-100);
+}
+
+.ads-custom-timeline .ads-timeline-track {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  overflow: hidden;
+  background: rgb(255 255 255 / 0.65);
+}
+
+.ads-custom-timeline .ads-timeline-playhead {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 30;
+  width: 2px;
+  background: var(--ads-timeline-playhead);
+  box-shadow: 0 0 6px rgb(239 68 68 / 0.55);
+  pointer-events: none;
+}
+
+.ads-custom-timeline .ads-timeline-playhead-handle {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 9999px;
+  background: var(--ads-timeline-playhead);
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.2);
+  transform: translate(-50%, -50%);
+}
+
+.ads-custom-timeline .ads-timeline-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  border-top: 1px solid var(--ads-timeline-slate-100);
+  padding: 0.75rem;
+  background: #fff;
+}
+
+.ads-custom-timeline .ads-timeline-clock {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.875rem;
+  text-align: center;
+  color: var(--ads-timeline-slate-700);
+}
+
+/* Episode clip — Twick-style purple chrome + real video thumbnails */
+.ads-custom-timeline .ads-timeline-episode-clip {
+  position: absolute;
+  top: 2px;
+  height: calc(100% - 4px);
+  overflow: hidden;
+  border-radius: 0.5rem 0.5rem 0 0;
+  background-color: #8b5fbf;
+  pointer-events: none;
+  cursor: default;
+}
+
+.ads-custom-timeline .ads-timeline-media-strip {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  overflow: hidden;
+  pointer-events: none;
+  border-radius: 0.5rem 0.5rem 0 0;
+}
+
+.ads-custom-timeline .ads-timeline-media-strip-video {
+  background: linear-gradient(
+    180deg,
+    rgb(196 181 253 / 0.35) 0%,
+    rgb(139 92 246 / 0.2) 100%
+  );
+}
+
+.ads-custom-timeline .ads-timeline-media-strip-thumb {
+  flex: 1 0 0;
+  width: 0;
+  height: 100%;
+  object-fit: cover;
+  user-select: none;
+}
+
+.ads-custom-timeline .ads-timeline-episode-strip-fallback {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgb(196 181 253 / 0.7) 0%,
+    rgb(139 92 246 / 0.45) 100%
+  );
+}
+
+.ads-custom-timeline .ads-timeline-episode-label {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  padding: 0.25rem;
+  overflow: hidden;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #fff;
+  user-select: none;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.35);
+}

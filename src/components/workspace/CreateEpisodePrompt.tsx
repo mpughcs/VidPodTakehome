@@ -49,7 +49,7 @@ export function CreateEpisodeModal({ onSubmit }: CreateEpisodeModalProps) {
         title: title.trim(),
         description: description.trim(),
       })
-      ;(document.getElementById(MODAL_ID) as HTMLDialogElement | null)?.close()
+        ; (document.getElementById(MODAL_ID) as HTMLDialogElement | null)?.close()
     } catch (submitError) {
       setError(
         submitError instanceof Error
