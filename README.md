@@ -1,16 +1,29 @@
 # Flight Story Ads Editor Take Home
 
-Hi Rox! I had a great time building this. I found the project both challenging and rewarding, and I'm excited to share what i've got. I had to take some creative liberties while replicating the figma mockup, namely, the creation of new episodes, how auth is handled, etc. 
+Hi Rox! I had a great time building this. I found the project both challenging and rewarding, and I'm excited to share what i've got. I had to take some creative liberties while replicating the figma mockup, namely, the creation of new episodes, how auth is handled, etc.
 
 ## Upload Episodes and Ads
 ![Example of uploading MP4](./exampleGif.gif)
 
+## How this was built
 
+### Starter template
 
+I bootstrapped this from my own full-stack starter, [Template-Next-Full-Stack](https://github.com/mpughcs/Template-Next-Full-Stack), which I use for quick prototyping. That gave me Next.js (App Router), TypeScript, Tailwind, Firebase Auth/Firestore/Storage wiring, and a basic app shell — so most of the take-home time went into the ads editor, Twick integration, and playback rather than project setup.
+
+### Cursor
+
+I used [Cursor](https://cursor.com) as my IDE.
+
+I use this to enable me to focus on architectural and client facing decisions without being bogged down with boiler plate. I found it most helpful for 
+
+I still reviewed and steered every architectural call (e.g. dropping Twick Studio, custom dual-video playback). Cursor sped up implementation; the product decisions and tradeoffs were mine.
 
 ## Table of contents
 
+- [How this was built](#how-this-was-built)
 - [Quick start](#quick-start)
+- [Access for reviewers](#access-for-reviewers)
 - [Limitations](#limitations)
 - [User flow](#user-flow)
 - [Architecture & Key Files](#architecture-short)
@@ -31,7 +44,7 @@ npm run dev
 
 Then open [http://localhost:3000](http://localhost:3000).
 
-Sign in with the credentials I provide, create an episode, use **Import** in the sidebar to upload an MP4, and open the episode to land on the ads editor at `/episodes/[id]`.
+Sign in with the [reviewer credentials](#access-for-reviewers) I email you, create an episode, use **Import** in the sidebar to upload an MP4, and open the episode to land on the ads editor at `/episodes/[id]`.
 
 ### Firebase env vars
 
@@ -49,12 +62,23 @@ NEXT_PUBLIC_FIREBASE_APP_ID=
 ```
 ---
 
+## Access for reviewers
+
+**Credentials are not in this repo.** Email me at **[maxgpugh01@gmail.com](mailto:maxgpugh01@gmail.com)** and I’ll send:
+
+1. A `.env.local` with Firebase config  
+2. A reviewer login (email + password)
+
+Sign-up is disabled, so you’ll need that login to use the app. I’ll also include a short walkthrough if helpful.
+
+---
+
 ## Limitations
 
 A few intentional constraints for this take-home, especially if I deploy it against live Firebase / Storage:
 
-- **No public sign-up** — Review access is invite-only: sign in with credentials I share, or ask me for a login. Protects paid firebase resources
-- **Firebase keys are not in the repo** — see [Firebase env vars](#firebase-env-vars) above; email me for a `.env.local`.
+- **No public sign-up** — invite-only; see [Access for reviewers](#access-for-reviewers).
+- **Firebase keys are not in the repo** — email me for a `.env.local`.
 - **Episodes need an imported MP4** before preview and the timeline are useful — otherwise there’s nothing to scrub.
 - **A/B mode is preview-only** — no analytics or winner selection yet (see [Known gaps](#known-gaps--nice-to-haves)).
 
@@ -114,7 +138,7 @@ Preview playback is **custom** (`InterstitialPreview` + dual `<video>`) so inter
 
 Honest list of what’s still thin or would get another pass in a real sprint:
 
-1. When first attempting the project, I tried to add advertisement tracks on the same track as the episode, and I had a lot of trouble getting this to work the way I wanted. I pivoted to handle ad placement and the video playback separatly, but because of this I had to compromise on how ads are actually shown in the editing feed. Instead of the add actually being inserted in the episode source, now the add is made to be the primary track and plays simultaniously with the episode hidden until the end of the ad, or until skip ad is pressed. This insn't a perfect solution, and if I had more time, I would design a more robust system to handle ad insertion. 
+1.  **Interstitials**- When first attempting the project, I tried to add advertisement tracks on the same track as the episode, and I had a lot of trouble getting this to work the way I wanted. I pivoted to handle ad placement and the video playback separatly, but because of this I had to compromise on how ads are actually shown in the editing feed. Instead of the add actually being inserted in the episode source, now the add is made to be the primary track and plays simultaniously with the episode hidden until the end of the ad, or until skip ad is pressed. This insn't a perfect solution, and if I had more time, I would design a more robust system to handle ad insertion. 
 4. **Undo after drag** — mostly there via Twick + careful Firestore sync; 
 5. **Analytics / “find the best ad”** — A/B is storage + UI only; no metrics or winner selection yet
 
@@ -122,10 +146,11 @@ Honest list of what’s still thin or would get another pass in a real sprint:
 
 ## Tech stack
 
-- **Next.js 16** (App Router), React 19, TypeScript
+- **Next.js 16** (App Router), React 19, TypeScript — bootstrapped from [Template-Next-Full-Stack](https://github.com/mpughcs/Template-Next-Full-Stack)
 - **Tailwind CSS 4**, DaisyUI
-- **Firebase** — Auth, Firestore, Storage 
+- **Firebase** — Auth, Firestore, Storage
 - **Twick** — `@twick/timeline`, `@twick/media-utils` (see [Twick](#twick))
+- **Cursor** — primary IDE (see [How this was built](#how-this-was-built))
 
 ---
 

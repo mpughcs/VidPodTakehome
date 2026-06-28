@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 
 import { useEpisodes } from "@/context/EpisodeContext"
+import { MP4_UPLOAD_REQUIREMENTS, validateMp4File } from "@/lib/mp4-upload"
 
 const MODAL_ID = "import-mp4-modal"
 
@@ -43,15 +44,19 @@ export function ImportMp4Modal() {
   function handleFileChange(file: File | undefined) {
     if (!file) {
       setSelectedFile(null)
+      setUploadError(null)
       return
     }
 
-    if (file.type !== "video/mp4" && !file.name.toLowerCase().endsWith(".mp4")) {
+    const validation = validateMp4File(file)
+    if (!validation.valid) {
       setSelectedFile(null)
+      setUploadError(validation.error)
       if (inputRef.current) inputRef.current.value = ""
       return
     }
 
+    setUploadError(null)
     setSelectedFile(file)
   }
 
@@ -65,7 +70,7 @@ export function ImportMp4Modal() {
       <div className="modal-box">
         <h3 className="text-lg font-bold">Import MP4</h3>
         <p className="py-4 text-sm text-slate-500">
-          Upload an episode or ad clip. Only `.mp4` files are supported for now.
+          Upload an episode or ad clip. {MP4_UPLOAD_REQUIREMENTS}
         </p>
 
         {episodes.length > 0 ? (

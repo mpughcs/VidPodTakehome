@@ -5,7 +5,11 @@ import { useEffect, useRef, useState } from "react"
 
 import { uploadAdWithMp4 } from "@/lib/ads-db"
 import { waitForFirebaseAuthUser } from "@/lib/firebase-auth"
-import { isValidMp4File, titleFromMp4Filename } from "@/lib/mp4-upload"
+import {
+  MP4_UPLOAD_REQUIREMENTS,
+  titleFromMp4Filename,
+  validateMp4File,
+} from "@/lib/mp4-upload"
 import type { Ad } from "@/types/ad"
 
 const MODAL_ID = "upload-ad-modal"
@@ -66,9 +70,10 @@ export function UploadAdModal() {
       return
     }
 
-    if (!isValidMp4File(selected)) {
+    const validation = validateMp4File(selected)
+    if (!validation.valid) {
       setFile(null)
-      setError("Only `.mp4` files are supported.")
+      setError(validation.error)
       if (inputRef.current) inputRef.current.value = ""
       return
     }
@@ -136,7 +141,7 @@ export function UploadAdModal() {
           <div>
             <h3 className="text-xl font-bold text-slate-900">Upload ad</h3>
             <p className="mt-1 text-sm text-slate-500">
-              Add a new MP4 clip to your ad library
+              Add a new MP4 clip to your ad library. {MP4_UPLOAD_REQUIREMENTS}
             </p>
           </div>
           <button

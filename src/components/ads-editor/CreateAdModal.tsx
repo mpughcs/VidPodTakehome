@@ -248,10 +248,8 @@ export function CreateAdModal({ onSubmit }: CreateAdModalProps) {
   const selectionType = mode === "static" ? "single" : "multi"
   const minAdsRequired = mode === "ab" ? 2 : mode === "static" ? 1 : 0
 
-  // The slot length must match the ad's real media duration so the full ad
-  // plays and the episode resumes exactly when the ad ends. For A/B we take the
-  // longest variant so any rotated ad fits. Ceil to whole seconds. Returns null
-  // when no selected ad has a known duration (e.g. auto mode) — slot stays manual.
+  // The slot length must match the ad's real media duration.
+  // Returns null when no selected ad has a known duration (e.g. auto mode) — slot stays manual.
   const selectedAdDuration = useMemo(() => {
     const durations = ads
       .filter((ad) => selectedAdIds.includes(ad.id))

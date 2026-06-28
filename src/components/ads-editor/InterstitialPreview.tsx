@@ -7,7 +7,6 @@ import { adsToMap } from "@/lib/ads-db"
 import {
   clearMarkerAdSelectionsBeforeContentTime,
   clearServedMarkersBeforeContentTime,
-  episodeTimeToContentTime,
   getAdSlotDuration,
   getDisplayContentTime,
   resolveAdForMarker,
@@ -87,11 +86,7 @@ export function InterstitialPreview({
   )
 
   const showEpisode = useCallback(
-    (
-      episodeTime: number,
-      shouldPlay: boolean,
-      contentTimeOverride?: number
-    ) => {
+    (episodeTime: number, shouldPlay: boolean) => {
       const episode = episodeRef.current
       const ad = adRef.current
       if (!episode) return
@@ -123,14 +118,7 @@ export function InterstitialPreview({
         episode.pause()
       }
 
-      const contentTime =
-        contentTimeOverride ??
-        episodeTimeToContentTime(
-          clamped,
-          playbackMarkersRef.current,
-          servedMarkerIdsRef.current
-        )
-      setCurrentTime(contentTime)
+      setCurrentTime(clamped)
     },
     [episodeDurationSeconds, playVideo, setCurrentTime, setIsAdPlaying]
   )
@@ -138,7 +126,7 @@ export function InterstitialPreview({
   const resumeAfterAd = useCallback(
     (marker: AdMarker, shouldPlay: boolean) => {
       servedMarkerIdsRef.current.add(marker.id)
-      showEpisode(marker.startSeconds, shouldPlay, marker.endSeconds)
+      showEpisode(marker.startSeconds, shouldPlay)
     },
     [showEpisode]
   )
@@ -246,13 +234,7 @@ export function InterstitialPreview({
       const episodeTime = episode!.currentTime
       lastEpisodeTimeRef.current = episodeTime
 
-      setCurrentTime(
-        episodeTimeToContentTime(
-          episodeTime,
-          playbackMarkersRef.current,
-          servedMarkerIdsRef.current
-        )
-      )
+      setCurrentTime(episodeTime)
 
       for (const marker of [...playbackMarkersRef.current].sort(
         (a, b) => a.startSeconds - b.startSeconds

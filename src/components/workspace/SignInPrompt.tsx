@@ -19,12 +19,7 @@ export function SignInPrompt() {
           <Link href="/login" className="btn btn-primary rounded-xl px-8">
             Sign in
           </Link>
-          <Link
-            href="/register"
-            className="btn btn-outline rounded-xl border-slate-200 px-8"
-          >
-            Create account
-          </Link>
+        
         </div>
       </div>
     </div>

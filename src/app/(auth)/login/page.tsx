@@ -22,13 +22,7 @@ export default function Login() {
       <h2 className="mt-20 text-lg font-semibold text-text-primary">
         Sign in to your account
       </h2>
-      <p className="mt-2 text-sm text-text-secondary">
-        Don’t have an account?{" "}
-        <Link href="/register" className="font-medium text-brand hover:underline">
-          Sign up
-        </Link>{" "}
-        for a free trial.
-      </p>
+     
       <LoginForm />
     </SlimLayout>
   )

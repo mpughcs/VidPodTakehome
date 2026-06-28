@@ -100,22 +100,6 @@ export function getAdSlotDuration(marker: AdMarker): number {
   return Math.max(0, marker.endSeconds - marker.startSeconds)
 }
 
-/** Timeline position while episode video plays after served ad breaks. */
-export function episodeTimeToContentTime(
-  episodeTime: number,
-  markers: AdMarker[],
-  servedMarkerIds: ReadonlySet<string>
-): number {
-  let content = episodeTime
-  for (const marker of sortMarkers(markers)) {
-    if (!servedMarkerIds.has(marker.id)) continue
-    if (episodeTime >= marker.startSeconds) {
-      content += getAdSlotDuration(marker)
-    }
-  }
-  return content
-}
-
 export function clearServedMarkersBeforeContentTime(
   contentTime: number,
   servedMarkerIds: Set<string>,
