@@ -24,10 +24,10 @@ I still reviewed and steered every architectural call (e.g. dropping Twick Studi
 - [How this was built](#how-this-was-built)
 - [Quick start](#quick-start)
 - [Access for reviewers](#access-for-reviewers)
-- [Limitations](#limitations)
 - [User flow](#user-flow)
 - [Architecture & Key Files](#architecture-short)
 - [Twick](#twick)
+- [Limitations](#limitations)
 - [Known gaps & nice-to-haves](#known-gaps--nice-to-haves)
 - [Tech stack](#tech-stack)
 - [Notes for reviewers](#notes-for-reviewers)
@@ -73,16 +73,6 @@ Sign-up is disabled, so you’ll need that login to use the app. I’ll also inc
 
 ---
 
-## Limitations
-
-A few intentional constraints for this take-home, especially if I deploy it against live Firebase / Storage:
-
-- **No public sign-up** — invite-only; see [Access for reviewers](#access-for-reviewers).
-- **Firebase keys are not in the repo** — email me for a `.env.local`.
-- **Episodes need an imported MP4** before preview and the timeline are useful — otherwise there’s nothing to scrub.
-- **A/B mode is preview-only** — no analytics or winner selection yet (see [Known gaps](#known-gaps--nice-to-haves)).
-
----
 
 ## User flow
 
@@ -131,6 +121,17 @@ I started with **`@twick/studio`** but dropped it — too much UI, global CSS bl
 - **`@twick/media-utils`** — filmstrip thumbnails on the episode track
 
 Preview playback is **custom** (`InterstitialPreview` + dual `<video>`) so interstitial ad logic (auto / static / A/B, skip, seek) stays in app code. I didn’t pull in render, cloud, or effects packages — out of scope for this take-home.
+
+---
+
+## Limitations
+
+A few intentional constraints for this take-home, especially if I deploy it against live Firebase / Storage:
+
+- **No public sign-up** — invite-only; see [Access for reviewers](#access-for-reviewers).
+- **Firebase keys are not in the repo** — email me for a `.env.local`.
+- **Episodes need an imported MP4** before preview and the timeline are useful — otherwise there’s nothing to scrub.
+- **A/B mode is preview-only** — no analytics or winner selection yet (see [Known gaps](#known-gaps--nice-to-haves)).
 
 ---
 
