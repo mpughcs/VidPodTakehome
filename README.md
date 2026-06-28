@@ -3,7 +3,7 @@
 Hi Rox! I had a great time building this. I found the project both challenging and rewarding, and I'm excited to share what i've got. I had to take some creative liberties while replicating the figma mockup, namely, the creation of new episodes, how auth is handled, etc. 
 
 ## Upload Episodes and Ads
-![Example of uploading MP4](./examplGif.gif)
+![Example of uploading MP4](./exampleGif.gif)
 
 
 
