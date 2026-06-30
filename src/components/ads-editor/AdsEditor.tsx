@@ -27,21 +27,21 @@ export function AdsEditor({ episode }: AdsEditorProps) {
       <header>
         <Link
           href="/"
-          className="text-sm text-slate-500 hover:text-slate-700"
+          className="text-sm font-medium text-slate-500 hover:text-slate-700"
         >
-          ← Episodes
+          ← Ads
         </Link>
-        <h1 className="mt-2 max-w-4xl text-2xl font-semibold leading-tight text-slate-900 lg:text-3xl">
+        <h1 className="mt-3 max-w-4xl text-2xl font-bold leading-tight tracking-tight text-slate-900 lg:text-[1.75rem] w-[500px]">
           {episode.title}
         </h1>
         <p className="mt-2 text-sm text-slate-500">
+          {episode.epNumber ? `Episode ${episode.epNumber}` : "Episode"}
+          {" · "}
           {formatUploadDate(episode.uploadDate)}
-          {episode.epNumber ? ` · Episode ${episode.epNumber}` : ""}
-        
         </p>
       </header>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
+      <div className="grid gap-6 lg:grid-cols-[minmax(280px,1fr)_minmax(0,2.5fr)]">
         <AdMarkersPanel />
         <VideoPlayerPanel episode={episode} />
       </div>

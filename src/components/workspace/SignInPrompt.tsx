@@ -3,7 +3,7 @@ import Link from "next/link"
 export function SignInPrompt() {
   return (
     <div className="flex min-h-[calc(100vh-5rem)] flex-col items-center justify-center px-6 py-16">
-      <div className="max-w-lg rounded-2xl border border-slate-200 bg-white p-10 text-center shadow-sm">
+      <div className="max-w-lg rounded-xl border border-slate-200 bg-white p-10 text-center shadow-sm">
         <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">
           Sign in required
         </p>
@@ -19,7 +19,7 @@ export function SignInPrompt() {
           <Link href="/login" className="btn btn-primary rounded-xl px-8">
             Sign in
           </Link>
-        
+
         </div>
       </div>
     </div>

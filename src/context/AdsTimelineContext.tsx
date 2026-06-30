@@ -60,6 +60,7 @@ type AdsTimelineContextValue = {
   setCurrentTime: (seconds: number) => void
   seekTo: (seconds: number) => void
   seekTime: number
+  seekNonce: number
   isAdPlaying: boolean
   setIsAdPlaying: (playing: boolean) => void
   skipAd: () => void
@@ -251,6 +252,7 @@ function AdsTimelineInner({
   const flushMarkerPersistenceRef = useRef<() => void>(() => {})
   const [currentTime, setCurrentTimeState] = useState(0)
   const [seekTime, setSeekTime] = useState(0)
+  const [seekNonce, setSeekNonce] = useState(0)
   const [isAdPlaying, setIsAdPlaying] = useState(false)
   const [skipAdNonce, setSkipAdNonce] = useState(0)
 
@@ -285,6 +287,7 @@ function AdsTimelineInner({
       const clamped = Math.max(0, Math.min(seconds, episodeDurationSeconds))
       setCurrentTimeState(clamped)
       setSeekTime(clamped)
+      setSeekNonce((nonce) => nonce + 1)
     },
     [episodeDurationSeconds, isAdPlaying]
   )
@@ -292,6 +295,7 @@ function AdsTimelineInner({
   useEffect(() => {
     setCurrentTimeState(0)
     setSeekTime(0)
+    setSeekNonce((nonce) => nonce + 1)
     setIsAdPlaying(false)
   }, [episodeId])
 
@@ -472,6 +476,7 @@ function AdsTimelineInner({
       setCurrentTime,
       seekTo,
       seekTime,
+      seekNonce,
       isAdPlaying,
       setIsAdPlaying,
       skipAd,
@@ -497,6 +502,7 @@ function AdsTimelineInner({
       setCurrentTime,
       seekTo,
       seekTime,
+      seekNonce,
       isAdPlaying,
       setIsAdPlaying,
       skipAd,
@@ -543,6 +549,8 @@ export function AdsTimelineProvider({
   const [initialData, setInitialData] = useState<ProjectJSON | null>(null)
 
   useEffect(() => {
+    let cancelled = false
+
     async function load() {
       const stored = loadProjectFromLocalStorage(episodeId)
       const baseProject = patchEpisodeDuration(
@@ -552,10 +560,19 @@ export function AdsTimelineProvider({
         episodeDurationSeconds
       )
 
-      setInitialData(baseProject)
+      if (!cancelled) {
+        setInitialData(baseProject)
+      }
     }
-    load()
-  }, [episodeId, episodeTitle, episodeDurationSeconds])
+
+    setInitialData(null)
+    void load()
+
+    return () => {
+      cancelled = true
+    }
+    // Duration is patched live in AdsTimelineInner — avoid remounting the player.
+  }, [episodeId, episodeTitle])
 
   if (!initialData) {
     return (

@@ -1,33 +1,43 @@
+import type { ElementType } from "react"
 import {
-  CiGrid42,
-  CiImport,
   CiSettings,
-  CiBadgeDollar,
-} from "react-icons/ci"
 
-export type EpisodeNavItemId = "dashboard" | "ads" | "import" | "settings"
+} from "react-icons/ci"
+import { LuHouse } from "react-icons/lu";
+import { FaRegChartBar } from "react-icons/fa";
+import { LuImport } from "react-icons/lu";
+
+import { CiDollar } from "react-icons/ci";
+import { FiTv } from "react-icons/fi";
+
+
+import { TbChartBar } from "react-icons/tb"
+
+export type EpisodeNavItemId =
+  | "dashboard"
+  | "analytics"
+  | "ads"
+  | "channels"
+  | "import"
+  | "settings"
 
 export const episodeNavItems: {
   id: EpisodeNavItemId
-  icon: typeof CiGrid42
+  icon: ElementType
   label: string
 }[] = [
-  { id: "dashboard", icon: CiGrid42, label: "Dashboard" },
-  { id: "ads", icon: CiBadgeDollar, label: "Ads" },
-  { id: "import", icon: CiImport, label: "Import" },
+  { id: "dashboard", icon: LuHouse, label: "Dashboard" },
+  { id: "analytics", icon: FaRegChartBar, label: "Analytics" },
+  { id: "ads", icon: CiDollar, label: "Ads" },
+  { id: "channels", icon: FiTv, label: "Channels" },
+  { id: "import", icon: LuImport, label: "Import" },
   { id: "settings", icon: CiSettings, label: "Settings" },
 ]
 
-export type EpisodeNavItemState = {
-  enabled: boolean
-  active: boolean
-}
-
-export function getEpisodeNavItemState(
+export function getEpisodeNavItemActive(
   itemId: EpisodeNavItemId,
-  pathname: string,
-  hasEpisodes: boolean
-): EpisodeNavItemState {
+  pathname: string
+): boolean {
   const isEpisodesHome = pathname === "/"
   const activeEpisodeId = pathname.startsWith("/episodes/")
     ? pathname.split("/episodes/")[1]?.split("/")[0]
@@ -38,18 +48,10 @@ export function getEpisodeNavItemState(
 
   switch (itemId) {
     case "dashboard":
-      return { enabled: !isEpisodesHome, active: isEpisodesHome }
+      return isEpisodesHome
     case "ads":
-      return {
-        enabled: isEpisodeEditor ? false : Boolean(activeEpisodeId),
-        active: isEpisodeEditor,
-      }
-    case "import":
-      return {
-        enabled: isEpisodeEditor && hasEpisodes,
-        active: false,
-      }
-    case "settings":
-      return { enabled: false, active: false }
+      return isEpisodeEditor
+    default:
+      return false
   }
 }

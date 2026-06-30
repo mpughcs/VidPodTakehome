@@ -94,7 +94,7 @@ export function TimelinePanel() {
   const [zoom, setZoom] = useState(1)
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
       <TimelineToolbar zoom={zoom} onZoomChange={setZoom} />
       <TwickTimelineRenderer
         durationSeconds={episodeDurationSeconds}

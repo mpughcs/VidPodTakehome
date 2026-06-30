@@ -20,10 +20,12 @@ function HeaderIconDropdown({
   icon: Icon,
   label,
   children,
+  showBadge = false,
 }: {
   icon: ElementType
   label: string
   children: ReactNode
+  showBadge?: boolean
 }) {
   return (
     <div className="dropdown dropdown-end">
@@ -31,9 +33,12 @@ function HeaderIconDropdown({
         type="button"
         tabIndex={0}
         aria-label={label}
-        className="btn btn-ghost btn-sm btn-square rounded-lg text-slate-600 hover:bg-slate-100"
+        className="relative btn btn-ghost btn-sm btn-square rounded-lg text-slate-600 hover:bg-slate-100"
       >
         <Icon className="text-2xl" />
+        {showBadge && (
+          <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-red-500" />
+        )}
       </button>
       <div
         tabIndex={0}
@@ -47,7 +52,7 @@ function HeaderIconDropdown({
 
 function NotificationsDropdown() {
   return (
-    <HeaderIconDropdown icon={CiBellOn} label="Notifications">
+    <HeaderIconDropdown icon={CiBellOn} label="Notifications" showBadge>
       <div className="border-b border-slate-100 px-4 py-3">
         <p className="font-semibold text-slate-900">Notifications</p>
         <p className="mt-0.5 text-xs text-slate-500">Recent activity</p>
@@ -159,7 +164,7 @@ function MobileNavigation() {
       />
       <PopoverPanel
         transition
-        className="absolute inset-x-0 top-full mt-4 flex origin-top flex-col rounded-2xl bg-surface p-4 text-lg tracking-tight text-text-primary ring-1 shadow-xl ring-surface-invert/5 data-closed:scale-95 data-closed:opacity-0 data-enter:duration-150 data-enter:ease-out data-leave:duration-100 data-leave:ease-in"
+        className="absolute inset-x-0 top-full mt-4 flex origin-top flex-col rounded-xl bg-surface p-4 text-lg tracking-tight text-text-primary ring-1 shadow-xl ring-surface-invert/5 data-closed:scale-95 data-closed:opacity-0 data-enter:duration-150 data-enter:ease-out data-leave:duration-100 data-leave:ease-in"
       >
         {isAuthenticated ? (
           <>
@@ -187,20 +192,18 @@ function MobileNavigation() {
 
 export function Header() {
   return (
-    <header className="border-b-2 pb-4 pt-10">
+    <header className="border-b border-slate-200 bg-white pb-4 pt-6">
       <Container>
-        <nav className="relative flex justify-between font-lexend">
-          <div className="flex items-center md:gap-x-12">
-            <Link href="/" aria-label="Home">
-              <Logo className="h-10 w-auto" />
-            </Link>
-          </div>
-          <div className="hidden items-center gap-x-5 md:flex md:gap-x-8">
-            <div className="flex items-center gap-2">
-              <SettingsDropdown />
+        <nav className="relative flex items-center justify-between">
+          <Link href="/" aria-label="Home">
+            <Logo className="h-10 w-auto" />
+          </Link>
+          <div className="hidden items-center gap-3 md:flex">
+            <SettingsDropdown />
+            <div className="relative">
               <NotificationsDropdown />
-              <HeaderUserMenu />
             </div>
+            <HeaderUserMenu />
           </div>
           <div className="-mr-1 md:hidden">
             <MobileNavigation />

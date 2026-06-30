@@ -36,7 +36,7 @@ export function WorkspaceShell({ children }: { children: ReactNode }) {
       <section
         id="features"
         aria-label="Podcast workspace"
-        className="relative overflow-hidden"
+        className="relative"
       >
         <WorkspaceLayout sidebar={<WorkspaceSidebar />}>
           <WorkspaceGate>{children}</WorkspaceGate>

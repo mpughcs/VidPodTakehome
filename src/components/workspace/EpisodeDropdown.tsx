@@ -9,19 +9,17 @@ import { IoIosArrowForward } from "react-icons/io"
 import { openImportMp4Modal } from "@/components/ads-editor/ImportMp4Modal"
 import {
   episodeNavItems,
-  getEpisodeNavItemState,
+  getEpisodeNavItemActive,
   type EpisodeNavItemId,
 } from "@/components/workspace/episode-nav-items"
 import { useEpisodes } from "@/context/EpisodeContext"
 
-function navItemClassName(enabled: boolean, active: boolean) {
+function navItemClassName(active: boolean) {
   return clsx(
-    "relative left-16 flex w-full items-center gap-3 rounded-lg px-2 py-1.5 text-left font-bold transition-colors focus-visible:outline-none",
+    "flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left text-sm transition-colors focus-visible:outline-none",
     active
-      ? "cursor-default text-slate-900"
-      : enabled
-        ? "text-slate-500 hover:bg-slate-200/60"
-        : "cursor-not-allowed text-slate-300"
+      ? "cursor-default font-bold text-slate-900"
+      : "font-medium text-slate-500 hover:bg-slate-200/50"
   )
 }
 
@@ -33,21 +31,18 @@ export function EpisodeDropdown() {
   const activeEpisodeId = pathname.startsWith("/episodes/")
     ? pathname.split("/episodes/")[1]?.split("/")[0]
     : null
+  const episodeId = activeEpisodeId ?? episodes[0]?.id ?? null
 
   function renderNavItem(id: EpisodeNavItemId, icon: ElementType, label: string) {
-    const { enabled, active } = getEpisodeNavItemState(
-      id,
-      pathname,
-      episodes.length > 0
-    )
-    const className = navItemClassName(enabled, active)
+    const active = getEpisodeNavItemActive(id, pathname)
+    const className = navItemClassName(active)
 
     if (id === "dashboard") {
-      if (!enabled) {
+      if (active) {
         return (
-          <span aria-current={active ? "page" : undefined} className={className}>
-            <NavIcon icon={icon} />
-            <span className="text-base leading-none">{label}</span>
+          <span aria-current="page" className={className}>
+            <NavIcon icon={icon} active={active} />
+            <span>{label}</span>
           </span>
         )
       }
@@ -59,31 +54,31 @@ export function EpisodeDropdown() {
           onClick={() => setOpen(false)}
           className={className}
         >
-          <NavIcon icon={icon} />
-          <span className="text-base leading-none">{label}</span>
+          <NavIcon icon={icon} active={active} />
+          <span>{label}</span>
         </Link>
       )
     }
 
     if (id === "ads") {
-      if (!enabled || !activeEpisodeId) {
+      if (active || !episodeId) {
         return (
           <span aria-current={active ? "page" : undefined} className={className}>
-            <NavIcon icon={icon} />
-            <span className="text-base leading-none">{label}</span>
+            <NavIcon icon={icon} active={active} />
+            <span>{label}</span>
           </span>
         )
       }
 
       return (
         <Link
-          href={`/episodes/${activeEpisodeId}`}
+          href={`/episodes/${episodeId}`}
           tabIndex={open ? 0 : -1}
           onClick={() => setOpen(false)}
           className={className}
         >
-          <NavIcon icon={icon} />
-          <span className="text-base leading-none">{label}</span>
+          <NavIcon icon={icon} active={active} />
+          <span>{label}</span>
         </Link>
       )
     }
@@ -93,16 +88,15 @@ export function EpisodeDropdown() {
         <button
           type="button"
           tabIndex={open ? 0 : -1}
-          disabled={!enabled}
           onClick={() => {
-            if (!enabled || !activeEpisodeId) return
+            if (!episodeId) return
             setOpen(false)
-            openImportMp4Modal(activeEpisodeId)
+            openImportMp4Modal(episodeId)
           }}
           className={clsx(className, "border-0 bg-transparent shadow-none")}
         >
-          <NavIcon icon={icon} />
-          <span className="text-base leading-none">{label}</span>
+          <NavIcon icon={icon} active={active} />
+          <span>{label}</span>
         </button>
       )
     }
@@ -111,33 +105,35 @@ export function EpisodeDropdown() {
       <button
         type="button"
         tabIndex={open ? 0 : -1}
-        disabled={!enabled}
         className={clsx(className, "border-0 bg-transparent shadow-none")}
       >
-        <NavIcon icon={icon} />
-        <span className="text-base leading-none">{label}</span>
+        <NavIcon icon={icon} active={active} />
+        <span>{label}</span>
       </button>
     )
   }
 
   return (
-    <li className="relative w-full hover:bg-transparent">
+    <div className="flex flex-col">
       <button
         type="button"
         aria-expanded={open}
         onClick={() => setOpen((prev) => !prev)}
-        className="relative z-10 btn btn-outline w-full justify-around border-slate-100 bg-white"
+        className="flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-left shadow-sm transition-colors hover:bg-slate-50"
       >
-        <div className="h-8 w-8 overflow-hidden rounded-sm">
+        <div className="h-9 w-9 shrink-0 overflow-hidden rounded-md bg-slate-100">
           <img
             src="https://img.daisyui.com/images/profile/demo/batperson@192.webp"
             alt=""
+            className="h-full w-full object-cover"
           />
         </div>
-        <span className="truncate">The Diary Of A CEO</span>
+        <span className="min-w-0 flex-1 truncate text-sm font-semibold text-slate-900">
+          The Diary Of A CEO
+        </span>
         <IoIosArrowForward
           className={clsx(
-            "relative shrink-0 transition-transform duration-200",
+            "shrink-0 text-slate-400 transition-transform duration-200",
             open && "rotate-90"
           )}
         />
@@ -145,7 +141,7 @@ export function EpisodeDropdown() {
 
       <div
         className={clsx(
-          "relative z-0 grid overflow-hidden transition-[grid-template-rows] duration-200 ease-out",
+          "grid overflow-hidden transition-[grid-template-rows] duration-200 ease-out",
           open ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
         )}
       >
@@ -155,27 +151,29 @@ export function EpisodeDropdown() {
             open ? "opacity-100" : "opacity-0"
           )}
         >
-          <div className="px-3 pt-3">
-            <ul
-              aria-hidden={!open}
-              className="flex list-none flex-col gap-2"
-              style={{ scrollbarWidth: "none" }}
-            >
-              {episodeNavItems.map(({ id, icon, label }) => (
-                <li key={id}>{renderNavItem(id, icon, label)}</li>
-              ))}
-            </ul>
-          </div>
+          <ul
+            aria-hidden={!open}
+            className="mt-2 flex list-none flex-col gap-0.5 pl-1"
+          >
+            {episodeNavItems.map(({ id, icon, label }) => (
+              <li key={id}>{renderNavItem(id, icon, label)}</li>
+            ))}
+          </ul>
         </div>
       </div>
-    </li>
+    </div>
   )
 }
 
-function NavIcon({ icon: Icon }: { icon: ElementType }) {
+function NavIcon({ icon: Icon, active }: { icon: ElementType; active: boolean }) {
   return (
-    <span className="flex w-6 shrink-0 items-center justify-center">
-      <Icon className="text-2xl" />
+    <span
+      className={clsx(
+        "flex w-5 shrink-0 items-center justify-center",
+        active ? "text-slate-900" : "text-slate-500"
+      )}
+    >
+      <Icon className="text-xl" aria-hidden />
     </span>
   )
 }

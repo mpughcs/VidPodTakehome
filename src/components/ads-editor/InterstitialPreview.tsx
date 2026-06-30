@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useRef } from "react"
+import { useCallback, useEffect, useMemo, useRef, type RefObject } from "react"
 
 import { useAdsTimeline } from "@/context/AdsTimelineContext"
 import { adsToMap } from "@/lib/ads-db"
@@ -23,6 +23,49 @@ type InterstitialPreviewProps = {
 
 type Phase = "episode" | "ad"
 
+function playAfterSeek(
+  video: HTMLVideoElement,
+  token: number,
+  playbackTokenRef: RefObject<number>,
+  playingRef: RefObject<boolean>,
+  onFailure: () => void,
+  onPending: (abort: () => void) => void
+) {
+  const start = () => {
+    if (token !== playbackTokenRef.current || !playingRef.current) return
+
+    void video
+      .play()
+      .then(() => {
+        if (token !== playbackTokenRef.current || !playingRef.current) {
+          video.pause()
+        }
+      })
+      .catch((error) => {
+        if (token !== playbackTokenRef.current) return
+        if (error instanceof Error && error.name === "AbortError") return
+        onFailure()
+      })
+  }
+
+  let seekedHandler: (() => void) | null = null
+  const abort = () => {
+    if (seekedHandler) {
+      video.removeEventListener("seeked", seekedHandler)
+      seekedHandler = null
+    }
+  }
+  onPending(abort)
+
+  if (video.seeking) {
+    seekedHandler = start
+    video.addEventListener("seeked", seekedHandler, { once: true })
+    return
+  }
+
+  start()
+}
+
 export function InterstitialPreview({
   episodeSrc,
   playing,
@@ -33,6 +76,7 @@ export function InterstitialPreview({
     ads,
     episodeDurationSeconds,
     seekTime,
+    seekNonce,
     setCurrentTime,
     setIsAdPlaying,
     skipAdNonce,
@@ -46,10 +90,16 @@ export function InterstitialPreview({
   const lastEpisodeTimeRef = useRef(0)
   const servedMarkerIdsRef = useRef(new Set<string>())
   const markerAdSelectionRef = useRef<MarkerAdSelection>(new Map())
-  const lastSeekRef = useRef(seekTime)
+  const lastSeekRef = useRef({ time: seekTime, nonce: seekNonce })
+  const prevEpisodeSrcRef = useRef(episodeSrc)
   const playingRef = useRef(playing)
+  const playbackTokenRef = useRef(0)
+  const isSeekingRef = useRef(false)
+  const pendingPlaybackAbortRef = useRef<(() => void) | null>(null)
 
   const adsById = useMemo(() => adsToMap(ads), [ads])
+  const adsByIdRef = useRef(adsById)
+  adsByIdRef.current = adsById
   const adResolveOptions = useMemo(
     () => ({
       allAds: ads,
@@ -70,33 +120,76 @@ export function InterstitialPreview({
 
   playingRef.current = playing
 
+  const cancelPendingPlayback = useCallback(() => {
+    playbackTokenRef.current += 1
+    pendingPlaybackAbortRef.current?.()
+    pendingPlaybackAbortRef.current = null
+  }, [])
+
   const pauseAll = useCallback(() => {
     episodeRef.current?.pause()
     adRef.current?.pause()
   }, [])
 
-  const playVideo = useCallback(
-    (video: HTMLVideoElement | null) => {
-      if (!video) return
-      void video.play().catch(() => {
-        onPlayingChange(false)
-      })
-    },
-    [onPlayingChange]
-  )
+  const onPlayFailure = useCallback(() => {
+    onPlayingChange(false)
+  }, [onPlayingChange])
+
+  const playActiveVideo = useCallback(() => {
+    const token = playbackTokenRef.current
+    const registerPending = (abort: () => void) => {
+      pendingPlaybackAbortRef.current?.()
+      pendingPlaybackAbortRef.current = abort
+    }
+
+    if (phaseRef.current === "episode") {
+      const episode = episodeRef.current
+      if (episode) {
+        playAfterSeek(
+          episode,
+          token,
+          playbackTokenRef,
+          playingRef,
+          onPlayFailure,
+          registerPending
+        )
+      }
+      return
+    }
+
+    const ad = adRef.current
+    if (ad) {
+      playAfterSeek(
+        ad,
+        token,
+        playbackTokenRef,
+        playingRef,
+        onPlayFailure,
+        registerPending
+      )
+    }
+  }, [onPlayFailure])
+
+  const resumeIfPlaying = useCallback(() => {
+    if (!playingRef.current) return
+    playActiveVideo()
+  }, [playActiveVideo])
 
   const showEpisode = useCallback(
-    (episodeTime: number, shouldPlay: boolean) => {
+    (episodeTime: number) => {
       const episode = episodeRef.current
       const ad = adRef.current
-      if (!episode) return
+      if (!episode) return null
 
       phaseRef.current = "episode"
       activeMarkerIdRef.current = null
       adOffsetRef.current = 0
 
-      ad?.pause()
-      if (ad) ad.style.visibility = "hidden"
+      pauseAll()
+      if (ad) {
+        ad.muted = true
+        ad.style.visibility = "hidden"
+      }
       episode.style.visibility = "visible"
       setIsAdPlaying(false)
 
@@ -107,50 +200,63 @@ export function InterstitialPreview({
           episodeDurationSeconds
         )
       )
-      if (Math.abs(episode.currentTime - clamped) > 0.05) {
+      const didSeek = Math.abs(episode.currentTime - clamped) > 0.05
+      if (didSeek) {
+        isSeekingRef.current = true
         episode.currentTime = clamped
       }
       lastEpisodeTimeRef.current = clamped
-
-      if (shouldPlay) {
-        playVideo(episode)
-      } else {
-        episode.pause()
-      }
+      episode.pause()
 
       setCurrentTime(clamped)
+      return didSeek ? episode : null
     },
-    [episodeDurationSeconds, playVideo, setCurrentTime, setIsAdPlaying]
+    [episodeDurationSeconds, pauseAll, setCurrentTime, setIsAdPlaying]
   )
 
   const resumeAfterAd = useCallback(
-    (marker: AdMarker, shouldPlay: boolean) => {
+    (marker: AdMarker) => {
       servedMarkerIdsRef.current.add(marker.id)
-      showEpisode(marker.startSeconds, shouldPlay)
+      cancelPendingPlayback()
+      const seekedVideo = showEpisode(marker.startSeconds)
+      if (seekedVideo) {
+        seekedVideo.addEventListener(
+          "seeked",
+          () => {
+            isSeekingRef.current = false
+            resumeIfPlaying()
+          },
+          { once: true }
+        )
+      } else {
+        isSeekingRef.current = false
+        resumeIfPlaying()
+      }
     },
-    [showEpisode]
+    [cancelPendingPlayback, resumeIfPlaying, showEpisode]
   )
 
   const showAd = useCallback(
-    (marker: AdMarker, adOffset: number, shouldPlay: boolean) => {
+    (marker: AdMarker, adOffset: number) => {
       const episode = episodeRef.current
       const adVideo = adRef.current
-      if (!episode || !adVideo) return
+      if (!episode || !adVideo) return null
 
       const ad = resolveAdForMarker(marker, adsById, adResolveOptionsRef.current)
       phaseRef.current = "ad"
       activeMarkerIdRef.current = marker.id
       adOffsetRef.current = adOffset
 
-      episode.pause()
+      pauseAll()
       episode.style.visibility = "hidden"
 
       if (!ad?.src) {
-        resumeAfterAd(marker, shouldPlay)
-        return
+        resumeAfterAd(marker)
+        return null
       }
 
       adVideo.style.visibility = "visible"
+      adVideo.muted = false
       setIsAdPlaying(true)
       if (adVideo.src !== ad.src) {
         adVideo.src = ad.src
@@ -158,76 +264,106 @@ export function InterstitialPreview({
 
       const slotDuration = getAdSlotDuration(marker)
       const clampedOffset = Math.min(Math.max(0, adOffset), slotDuration)
-      if (Math.abs(adVideo.currentTime - clampedOffset) > 0.05) {
+      const didSeek = Math.abs(adVideo.currentTime - clampedOffset) > 0.05
+      if (didSeek) {
+        isSeekingRef.current = true
         adVideo.currentTime = clampedOffset
       }
-
-      if (shouldPlay) {
-        playVideo(adVideo)
-      } else {
-        adVideo.pause()
-      }
+      adVideo.pause()
 
       setCurrentTime(getDisplayContentTime("ad", 0, marker, clampedOffset))
+      return didSeek ? adVideo : null
     },
-    [adsById, playVideo, resumeAfterAd, setCurrentTime, setIsAdPlaying]
+    [adsById, pauseAll, resumeAfterAd, setCurrentTime, setIsAdPlaying]
   )
 
-  const applySeek = useCallback(
-    (contentTime: number, shouldPlay: boolean) => {
-      clearServedMarkersBeforeContentTime(
-        contentTime,
-        servedMarkerIdsRef.current,
-        playbackMarkers
-      )
-      clearMarkerAdSelectionsBeforeContentTime(
-        contentTime,
-        markerAdSelectionRef.current,
-        playbackMarkers
-      )
+  const showEpisodeRef = useRef(showEpisode)
+  showEpisodeRef.current = showEpisode
+  const showAdRef = useRef(showAd)
+  showAdRef.current = showAd
+  const cancelPendingPlaybackRef = useRef(cancelPendingPlayback)
+  cancelPendingPlaybackRef.current = cancelPendingPlayback
+  const pauseAllRef = useRef(pauseAll)
+  pauseAllRef.current = pauseAll
+  const resumeIfPlayingRef = useRef(resumeIfPlaying)
+  resumeIfPlayingRef.current = resumeIfPlaying
 
-      const resolved = resolvePlaybackAtContentTime(
-        contentTime,
-        playbackMarkers,
-        adsById,
-        adResolveOptionsRef.current
+  const resumeAfterSeek = useCallback((seekedVideo: HTMLVideoElement | null) => {
+    if (!playingRef.current) {
+      isSeekingRef.current = false
+      return
+    }
+
+    if (seekedVideo) {
+      seekedVideo.addEventListener(
+        "seeked",
+        () => {
+          isSeekingRef.current = false
+          resumeIfPlayingRef.current()
+        },
+        { once: true }
       )
+      return
+    }
 
-      if (resolved.kind === "ad") {
-        showAd(resolved.marker, resolved.adOffset, shouldPlay)
-        return
-      }
+    isSeekingRef.current = false
+    resumeIfPlayingRef.current()
+  }, [])
 
-      showEpisode(resolved.episodeTime, shouldPlay)
-    },
-    [playbackMarkers, adsById, showAd, showEpisode]
-  )
+  const resumeAfterSeekRef = useRef(resumeAfterSeek)
+  resumeAfterSeekRef.current = resumeAfterSeek
 
   useEffect(() => {
-    if (lastSeekRef.current === seekTime) return
-    lastSeekRef.current = seekTime
-    applySeek(seekTime, playingRef.current)
-  }, [seekTime, applySeek])
+    const last = lastSeekRef.current
+    if (last.time === seekTime && last.nonce === seekNonce) return
+    lastSeekRef.current = { time: seekTime, nonce: seekNonce }
+
+    cancelPendingPlaybackRef.current()
+    isSeekingRef.current = true
+    pauseAllRef.current()
+
+    clearServedMarkersBeforeContentTime(
+      seekTime,
+      servedMarkerIdsRef.current,
+      playbackMarkersRef.current
+    )
+    clearMarkerAdSelectionsBeforeContentTime(
+      seekTime,
+      markerAdSelectionRef.current,
+      playbackMarkersRef.current
+    )
+
+    const resolved = resolvePlaybackAtContentTime(
+      seekTime,
+      playbackMarkersRef.current,
+      adsByIdRef.current,
+      adResolveOptionsRef.current
+    )
+
+    const seekedVideo =
+      resolved.kind === "ad"
+        ? showAdRef.current(resolved.marker, resolved.adOffset)
+        : showEpisodeRef.current(resolved.episodeTime)
+
+    resumeAfterSeekRef.current(seekedVideo)
+  }, [seekTime, seekNonce])
 
   useEffect(() => {
     if (!playing) {
-      pauseAll()
+      cancelPendingPlaybackRef.current()
+      pauseAllRef.current()
       return
     }
 
-    if (phaseRef.current === "episode") {
-      playVideo(episodeRef.current)
-      return
-    }
-
-    playVideo(adRef.current)
-  }, [playing, pauseAll, playVideo])
+    resumeIfPlayingRef.current()
+  }, [playing])
 
   useEffect(() => {
     const episode = episodeRef.current
     if (!episode) return
 
     function onEpisodeTimeUpdate() {
+      if (isSeekingRef.current || episode!.seeking) return
       if (phaseRef.current !== "episode" || !playingRef.current) return
 
       const previousTime = lastEpisodeTimeRef.current
@@ -246,7 +382,11 @@ export function InterstitialPreview({
         ) {
           const ad = resolveAdForMarker(marker, adsById, adResolveOptionsRef.current)
           if (!ad?.src) break
-          showAd(marker, 0, true)
+          cancelPendingPlaybackRef.current()
+          isSeekingRef.current = true
+          pauseAllRef.current()
+          const seekedVideo = showAdRef.current(marker, 0)
+          resumeAfterSeekRef.current(seekedVideo)
           break
         }
       }
@@ -254,13 +394,14 @@ export function InterstitialPreview({
 
     episode.addEventListener("timeupdate", onEpisodeTimeUpdate)
     return () => episode.removeEventListener("timeupdate", onEpisodeTimeUpdate)
-  }, [playbackMarkers, adsById, setCurrentTime, showAd])
+  }, [adsById, setCurrentTime])
 
   useEffect(() => {
     const adVideo = adRef.current
     if (!adVideo) return
 
     function onAdTimeUpdate() {
+      if (isSeekingRef.current || adVideo!.seeking) return
       if (phaseRef.current !== "ad") return
 
       const marker = playbackMarkersRef.current.find(
@@ -275,7 +416,7 @@ export function InterstitialPreview({
       setCurrentTime(getDisplayContentTime("ad", 0, marker, offset))
 
       if (offset >= slotDuration - 0.08) {
-        resumeAfterAd(marker, playingRef.current)
+        resumeAfterAd(marker)
       }
     }
 
@@ -284,7 +425,7 @@ export function InterstitialPreview({
         (item) => item.id === activeMarkerIdRef.current
       )
       if (!marker) return
-      resumeAfterAd(marker, playingRef.current)
+      resumeAfterAd(marker)
     }
 
     adVideo.addEventListener("timeupdate", onAdTimeUpdate)
@@ -300,13 +441,32 @@ export function InterstitialPreview({
     if (phaseRef.current !== "ad") return
     const marker = resolveActiveMarker()
     if (!marker) return
-    resumeAfterAd(marker, playingRef.current)
+    resumeAfterAd(marker)
   }, [skipAdNonce, resolveActiveMarker, resumeAfterAd])
 
   useEffect(() => {
-    applySeek(seekTime, false)
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- initial mount only
+    if (prevEpisodeSrcRef.current === episodeSrc) return
+
+    prevEpisodeSrcRef.current = episodeSrc
+    lastSeekRef.current = { time: 0, nonce: -1 }
+    cancelPendingPlaybackRef.current()
+    isSeekingRef.current = true
+    pauseAllRef.current()
+    const seekedVideo = showEpisodeRef.current(0)
+    resumeAfterSeekRef.current(seekedVideo)
+
+    return () => {
+      cancelPendingPlaybackRef.current()
+      pauseAllRef.current()
+    }
   }, [episodeSrc])
+
+  useEffect(() => {
+    return () => {
+      cancelPendingPlaybackRef.current()
+      pauseAllRef.current()
+    }
+  }, [])
 
   return (
     <div className="relative h-full w-full bg-black">
@@ -323,6 +483,7 @@ export function InterstitialPreview({
         style={{ visibility: "hidden" }}
         playsInline
         preload="auto"
+        muted
       />
     </div>
   )

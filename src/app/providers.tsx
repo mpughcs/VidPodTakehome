@@ -12,7 +12,7 @@ function FirebaseEnvGuard({ children }: { children: ReactNode }) {
   if (missingKeys.length > 0) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-50 p-6">
-        <div className="max-w-lg rounded-2xl border border-red-200 bg-white p-8 shadow-sm">
+        <div className="max-w-lg rounded-xl border border-red-200 bg-white p-8 shadow-sm">
           <h1 className="text-lg font-semibold text-slate-900">
             Firebase environment not configured
           </h1>

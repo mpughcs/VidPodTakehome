@@ -28,16 +28,16 @@ export function EpisodesHome() {
 
   function openDeleteModal(episodeId: string) {
     setDeleteEpisodeId(episodeId)
-    ;(
-      document.getElementById(DELETE_MODAL_ID) as HTMLDialogElement | null
-    )?.showModal()
+      ; (
+        document.getElementById(DELETE_MODAL_ID) as HTMLDialogElement | null
+      )?.showModal()
   }
 
   function closeDeleteModal() {
     setDeleteEpisodeId(null)
-    ;(
-      document.getElementById(DELETE_MODAL_ID) as HTMLDialogElement | null
-    )?.close()
+      ; (
+        document.getElementById(DELETE_MODAL_ID) as HTMLDialogElement | null
+      )?.close()
   }
 
   async function confirmDelete() {
@@ -122,7 +122,7 @@ export function EpisodesHome() {
       {isLoading ? (
         <p className="text-sm text-slate-400">Loading episodes…</p>
       ) : episodes.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-6 py-16 text-center">
+        <div className="rounded-xl border border-dashed border-slate-200 bg-white px-6 py-16 text-center">
           <p className="text-slate-500">No episodes yet.</p>
           <button
             type="button"
