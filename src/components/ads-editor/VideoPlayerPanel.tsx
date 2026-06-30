@@ -100,7 +100,7 @@ export function VideoPlayerPanel({ episode }: VideoPlayerPanelProps) {
                 type="button"
                 disabled={seekDisabled}
                 onClick={() => seekTo(0)}
-                className="flex items-center justify-start rounded-lg text-slate-500 transition-colors hover:bg-slate-100 disabled:opacity-30 flex-1"
+                className="flex items-center justify-start rounded-lg text-slate-500 transition-colors hover:bg-slate-100 disabled:opacity-30 flex-1 max-w-[120px] mr-auto m-1"
                 aria-label="Jump to start"
               >
                 <div className="rounded-full border border-slate-200 p-2">
@@ -166,7 +166,7 @@ export function VideoPlayerPanel({ episode }: VideoPlayerPanelProps) {
                 type="button"
                 disabled={seekDisabled}
                 onClick={() => seekTo(episodeDurationSeconds)}
-                className="flex items-center justify-end rounded-lg text-slate-500 transition-colors hover:bg-slate-100 disabled:opacity-30 flex-1"
+                className="flex items-center justify-end rounded-lg text-slate-500 transition-colors hover:bg-slate-100 disabled:opacity-30  max-w-[120px] ml-auto  m-1"
                 aria-label="Jump to end"
               >
                 <span className="text-xs font-semibold text-slate-500 mr-2">Jump to end</span>
