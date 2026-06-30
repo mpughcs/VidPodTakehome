@@ -16,6 +16,10 @@ import {
 
 import { useAdsTimeline } from "@/context/AdsTimelineContext"
 import { isAdMarkerElement, patchAdMarkerTimesInProject } from "@/lib/ad-markers-timeline"
+import {
+  contentTimeToEpisodeTime,
+  getEpisodeSrcSegments,
+} from "@/lib/interstitial-playback"
 
 import "@/styles/ads-timeline.css"
 
@@ -83,7 +87,8 @@ export function TwickTimelineRenderer({
   onViewportStartChange,
 }: TwickTimelineRendererProps) {
   const { present } = useTimelineContext()
-  const { currentTime, seekTo, isAdPlaying, setTimelineDragging } = useAdsTimeline()
+  const { currentTime, seekTo, isAdPlaying, setTimelineDragging, playbackMarkers } =
+    useAdsTimeline()
   const scrollRef = useRef<HTMLDivElement>(null)
   const laneRef = useRef<HTMLDivElement>(null)
   const draggingRef = useRef(false)
@@ -108,6 +113,11 @@ export function TwickTimelineRenderer({
         track.elements.filter((element) => isAdMarkerElement(element))
       ),
     [tracks]
+  )
+
+  const srcSegments = useMemo(
+    () => getEpisodeSrcSegments(timelineDuration, playbackMarkers),
+    [playbackMarkers, timelineDuration]
   )
 
   useEffect(() => {
@@ -195,11 +205,17 @@ export function TwickTimelineRenderer({
               )}
               onClick={(e) => seekFromClientX(e.clientX)}
               role="presentation"
-              title={
-                isAdPlaying ? "Timeline locked during ad playback" : undefined
-              }
             >
-              <SrcWaveform />
+              {srcSegments.map((segment) => (
+                <SrcSegmentClip
+                  key={`${segment.timelineStart}-${segment.timelineEnd}`}
+                  segment={segment}
+                  timelineDuration={timelineDuration}
+                  waveformSeed={Math.floor(
+                    contentTimeToEpisodeTime(segment.timelineStart, playbackMarkers)
+                  )}
+                />
+              ))}
 
               {adElements.map((element) => (
                 <DraggableAdClip
@@ -256,7 +272,30 @@ function pseudoRandom(index: number) {
   return x - Math.floor(x)
 }
 
-function SrcWaveform() {
+function SrcSegmentClip({
+  segment,
+  timelineDuration,
+  waveformSeed,
+}: {
+  segment: { timelineStart: number; timelineEnd: number }
+  timelineDuration: number
+  waveformSeed: number
+}) {
+  const left = (segment.timelineStart / timelineDuration) * 100
+  const width = ((segment.timelineEnd - segment.timelineStart) / timelineDuration) * 100
+
+  return (
+    <div
+      className="ads-timeline-src-segment"
+      style={{ left: `${left}%`, width: `${Math.max(width, 0)}%` }}
+      aria-hidden
+    >
+      <SrcWaveform seed={waveformSeed} />
+    </div>
+  )
+}
+
+function SrcWaveform({ seed = 0 }: { seed?: number }) {
   const ref = useRef<HTMLDivElement>(null)
   const [count, setCount] = useState(120)
 
@@ -273,8 +312,11 @@ function SrcWaveform() {
 
   const heights = useMemo(
     () =>
-      Array.from({ length: count }, (_value, index) => 16 + pseudoRandom(index) * 74),
-    [count]
+      Array.from(
+        { length: count },
+        (_value, index) => 16 + pseudoRandom(index + seed * 17) * 74
+      ),
+    [count, seed]
   )
 
   return (

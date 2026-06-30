@@ -32,13 +32,25 @@
   overflow: visible;
 }
 
-/* The src/episode track: full-width magenta lane that hosts ad overlays */
+/* The lane: black background; src segments and ad cards fill it as separate blocks */
 .ads-custom-timeline .ads-timeline-lane {
   position: relative;
   height: 92px;
   border-radius: 8px;
   overflow: hidden;
+  background: var(--ads-timeline-frame);
+}
+
+/* Episode src segment — purple rounded block with clipped waveform */
+.ads-custom-timeline .ads-timeline-src-segment {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  border-radius: 8px;
   background: var(--ads-timeline-src);
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.12);
+  overflow: hidden;
+  pointer-events: none;
 }
 
 /* Decorative waveform for the src track */
@@ -72,6 +84,7 @@
   padding: 7px 4px 8px;
   border-radius: 8px;
   background: var(--ad-body);
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.12);
   overflow: hidden;
   pointer-events: none;
 }

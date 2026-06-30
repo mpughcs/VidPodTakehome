@@ -115,7 +115,9 @@ export function AdMarkerFormModal({ onSubmit }: AdMarkerFormModalProps) {
           <label className="flex flex-col gap-1 text-sm">
             <span className="font-medium text-slate-700">Start time</span>
             <input
-              className="input input-bordered w-full"
+              className="input input-bordered w-full" 
+              type="time"
+              step="1"
               value={startTime}
               onChange={(e) => setStartTime(e.target.value)}
               placeholder="00:00:30"
@@ -126,6 +128,8 @@ export function AdMarkerFormModal({ onSubmit }: AdMarkerFormModalProps) {
             <span className="font-medium text-slate-700">End time</span>
             <input
               className="input input-bordered w-full"
+              type="time"
+              step="1"
               value={endTime}
               onChange={(e) => setEndTime(e.target.value)}
               placeholder="00:00:45"

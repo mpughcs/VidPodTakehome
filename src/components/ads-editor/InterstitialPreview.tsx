@@ -7,6 +7,7 @@ import { adsToMap } from "@/lib/ads-db"
 import {
   clearMarkerAdSelectionsBeforeContentTime,
   clearServedMarkersBeforeContentTime,
+  episodeTimeToContentTime,
   getAdSlotDuration,
   getDisplayContentTime,
   resolveAdForMarker,
@@ -176,7 +177,7 @@ export function InterstitialPreview({
   }, [playActiveVideo])
 
   const showEpisode = useCallback(
-    (episodeTime: number) => {
+    (episodeTime: number, contentTime?: number) => {
       const episode = episodeRef.current
       const ad = adRef.current
       if (!episode) return null
@@ -208,33 +209,20 @@ export function InterstitialPreview({
       lastEpisodeTimeRef.current = clamped
       episode.pause()
 
-      setCurrentTime(clamped)
+      const displayTime =
+        contentTime ??
+        episodeTimeToContentTime(
+          clamped,
+          playbackMarkersRef.current,
+          servedMarkerIdsRef.current
+        )
+      setCurrentTime(displayTime)
       return didSeek ? episode : null
     },
     [episodeDurationSeconds, pauseAll, setCurrentTime, setIsAdPlaying]
   )
 
-  const resumeAfterAd = useCallback(
-    (marker: AdMarker) => {
-      servedMarkerIdsRef.current.add(marker.id)
-      cancelPendingPlayback()
-      const seekedVideo = showEpisode(marker.startSeconds)
-      if (seekedVideo) {
-        seekedVideo.addEventListener(
-          "seeked",
-          () => {
-            isSeekingRef.current = false
-            resumeIfPlaying()
-          },
-          { once: true }
-        )
-      } else {
-        isSeekingRef.current = false
-        resumeIfPlaying()
-      }
-    },
-    [cancelPendingPlayback, resumeIfPlaying, showEpisode]
-  )
+  const resumeAfterAdRef = useRef<(marker: AdMarker) => void>(() => {})
 
   const showAd = useCallback(
     (marker: AdMarker, adOffset: number) => {
@@ -249,9 +237,13 @@ export function InterstitialPreview({
 
       pauseAll()
       episode.style.visibility = "hidden"
+      if (Math.abs(episode.currentTime - marker.startSeconds) > 0.05) {
+        episode.currentTime = marker.startSeconds
+      }
+      lastEpisodeTimeRef.current = marker.startSeconds
 
       if (!ad?.src) {
-        resumeAfterAd(marker)
+        resumeAfterAdRef.current(marker)
         return null
       }
 
@@ -274,7 +266,7 @@ export function InterstitialPreview({
       setCurrentTime(getDisplayContentTime("ad", 0, marker, clampedOffset))
       return didSeek ? adVideo : null
     },
-    [adsById, pauseAll, resumeAfterAd, setCurrentTime, setIsAdPlaying]
+    [adsById, pauseAll, setCurrentTime, setIsAdPlaying]
   )
 
   const showEpisodeRef = useRef(showEpisode)
@@ -313,6 +305,33 @@ export function InterstitialPreview({
   const resumeAfterSeekRef = useRef(resumeAfterSeek)
   resumeAfterSeekRef.current = resumeAfterSeek
 
+  const resumeAfterAd = useCallback(
+    (marker: AdMarker) => {
+      servedMarkerIdsRef.current.add(marker.id)
+      cancelPendingPlayback()
+
+      const contentTime = marker.endSeconds
+      const resolved = resolvePlaybackAtContentTime(
+        contentTime,
+        playbackMarkersRef.current,
+        adsByIdRef.current,
+        {
+          ...adResolveOptionsRef.current,
+          servedMarkerIds: servedMarkerIdsRef.current,
+        }
+      )
+
+      const seekedVideo =
+        resolved.kind === "ad"
+          ? showAdRef.current(resolved.marker, resolved.adOffset)
+          : showEpisodeRef.current(resolved.episodeTime, contentTime)
+
+      resumeAfterSeekRef.current(seekedVideo)
+    },
+    [cancelPendingPlayback]
+  )
+  resumeAfterAdRef.current = resumeAfterAd
+
   useEffect(() => {
     const last = lastSeekRef.current
     if (last.time === seekTime && last.nonce === seekNonce) return
@@ -337,13 +356,16 @@ export function InterstitialPreview({
       seekTime,
       playbackMarkersRef.current,
       adsByIdRef.current,
-      adResolveOptionsRef.current
+      {
+        ...adResolveOptionsRef.current,
+        servedMarkerIds: servedMarkerIdsRef.current,
+      }
     )
 
     const seekedVideo =
       resolved.kind === "ad"
         ? showAdRef.current(resolved.marker, resolved.adOffset)
-        : showEpisodeRef.current(resolved.episodeTime)
+        : showEpisodeRef.current(resolved.episodeTime, seekTime)
 
     resumeAfterSeekRef.current(seekedVideo)
   }, [seekTime, seekNonce])
@@ -370,15 +392,20 @@ export function InterstitialPreview({
       const episodeTime = episode!.currentTime
       lastEpisodeTimeRef.current = episodeTime
 
-      setCurrentTime(episodeTime)
+      const markers = playbackMarkersRef.current
+      const served = servedMarkerIdsRef.current
+      const previousContent = episodeTimeToContentTime(previousTime, markers, served)
+      const currentContent = episodeTimeToContentTime(episodeTime, markers, served)
 
-      for (const marker of [...playbackMarkersRef.current].sort(
+      setCurrentTime(currentContent)
+
+      for (const marker of [...markers].sort(
         (a, b) => a.startSeconds - b.startSeconds
       )) {
-        if (servedMarkerIdsRef.current.has(marker.id)) continue
+        if (served.has(marker.id)) continue
         if (
-          previousTime < marker.startSeconds &&
-          episodeTime >= marker.startSeconds - 0.05
+          previousContent < marker.startSeconds &&
+          currentContent >= marker.startSeconds - 0.05
         ) {
           const ad = resolveAdForMarker(marker, adsById, adResolveOptionsRef.current)
           if (!ad?.src) break
@@ -416,7 +443,7 @@ export function InterstitialPreview({
       setCurrentTime(getDisplayContentTime("ad", 0, marker, offset))
 
       if (offset >= slotDuration - 0.08) {
-        resumeAfterAd(marker)
+        resumeAfterAdRef.current(marker)
       }
     }
 
@@ -425,7 +452,7 @@ export function InterstitialPreview({
         (item) => item.id === activeMarkerIdRef.current
       )
       if (!marker) return
-      resumeAfterAd(marker)
+      resumeAfterAdRef.current(marker)
     }
 
     adVideo.addEventListener("timeupdate", onAdTimeUpdate)
@@ -434,15 +461,15 @@ export function InterstitialPreview({
       adVideo.removeEventListener("timeupdate", onAdTimeUpdate)
       adVideo.removeEventListener("ended", onAdEnded)
     }
-  }, [resumeAfterAd, setCurrentTime])
+  }, [setCurrentTime])
 
   useEffect(() => {
     if (skipAdNonce === 0) return
     if (phaseRef.current !== "ad") return
     const marker = resolveActiveMarker()
     if (!marker) return
-    resumeAfterAd(marker)
-  }, [skipAdNonce, resolveActiveMarker, resumeAfterAd])
+    resumeAfterAdRef.current(marker)
+  }, [skipAdNonce, resolveActiveMarker])
 
   useEffect(() => {
     if (prevEpisodeSrcRef.current === episodeSrc) return

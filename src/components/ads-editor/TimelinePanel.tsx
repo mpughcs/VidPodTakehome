@@ -70,7 +70,7 @@ function TimelineToolbar({
           max={TIMELINE_ZOOM_MAX}
           step="any"
           value={zoom}
-          
+
           onChange={(event) => onZoomChange(Number(event.target.value))}
           className=" range range-xs min-w-0 flex-1 text-black"
           aria-label="Timeline zoom"

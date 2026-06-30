@@ -37,6 +37,7 @@ import {
 } from "@/lib/ad-markers-timeline"
 import { subscribeAds } from "@/lib/ads-db"
 import { waitForFirebaseAuthUser } from "@/lib/firebase-auth"
+import { getContentTimelineDuration } from "@/lib/interstitial-playback"
 import {
   hydrateProjectAssets,
   loadProjectFromLocalStorage,
@@ -249,7 +250,7 @@ function AdsTimelineInner({
   const adMarkersRef = useRef<AdMarker[]>([])
   const isTimelineDraggingRef = useRef(false)
   const isSyncingFromTimelineRef = useRef(false)
-  const flushMarkerPersistenceRef = useRef<() => void>(() => {})
+  const flushMarkerPersistenceRef = useRef<() => void>(() => { })
   const [currentTime, setCurrentTimeState] = useState(0)
   const [seekTime, setSeekTime] = useState(0)
   const [seekNonce, setSeekNonce] = useState(0)
@@ -284,12 +285,17 @@ function AdsTimelineInner({
   const seekTo = useCallback(
     (seconds: number) => {
       if (isAdPlaying) return
-      const clamped = Math.max(0, Math.min(seconds, episodeDurationSeconds))
+
+      const maxDuration = getContentTimelineDuration(
+        playbackMarkers,
+        episodeDurationSeconds
+      )
+      const clamped = Math.max(0, Math.min(seconds, maxDuration))
       setCurrentTimeState(clamped)
       setSeekTime(clamped)
       setSeekNonce((nonce) => nonce + 1)
     },
-    [episodeDurationSeconds, isAdPlaying]
+    [episodeDurationSeconds, isAdPlaying, playbackMarkers]
   )
 
   useEffect(() => {

@@ -11,6 +11,8 @@ export type MarkerAdSelection = Map<string, string>
 export type AdResolveOptions = {
   allAds?: Ad[]
   selection?: MarkerAdSelection
+  /** Markers whose ad slots expand the content timeline (matches playback display). */
+  servedMarkerIds?: ReadonlySet<string>
 }
 
 function sortMarkers(markers: AdMarker[]) {
@@ -60,6 +62,62 @@ export function resolveAdForMarker(
   return chosen
 }
 
+/** Map timeline/content position to episode source time (after served ad slots). */
+export function contentTimeToEpisodeTime(
+  contentSeconds: number,
+  markers: AdMarker[],
+  servedMarkerIds: ReadonlySet<string> = new Set()
+): number {
+  const content = Math.max(0, contentSeconds)
+
+  for (const marker of sortMarkers(markers)) {
+    if (content >= marker.startSeconds && content < marker.endSeconds) {
+      return marker.startSeconds
+    }
+  }
+
+  let resumeEpisode = 0
+  let resumeContentEnd = 0
+  for (const marker of sortMarkers(markers)) {
+    if (!servedMarkerIds.has(marker.id)) continue
+    if (content >= marker.endSeconds) {
+      resumeEpisode = marker.startSeconds
+      resumeContentEnd = marker.endSeconds
+    }
+  }
+
+  if (resumeContentEnd > 0) {
+    return resumeEpisode + (content - resumeContentEnd)
+  }
+
+  return content
+}
+
+/** Map episode source time to timeline/content position (accounts for served ad slots). */
+export function episodeTimeToContentTime(
+  episodeSeconds: number,
+  markers: AdMarker[],
+  servedMarkerIds: ReadonlySet<string>
+): number {
+  const episode = Math.max(0, episodeSeconds)
+
+  let resumeEpisode = 0
+  let resumeContentEnd = 0
+  for (const marker of sortMarkers(markers)) {
+    if (!servedMarkerIds.has(marker.id)) continue
+    if (episode >= marker.startSeconds) {
+      resumeEpisode = marker.startSeconds
+      resumeContentEnd = marker.endSeconds
+    }
+  }
+
+  if (resumeContentEnd > 0) {
+    return resumeContentEnd + (episode - resumeEpisode)
+  }
+
+  return episode
+}
+
 /** Map a content-time scrub position to episode or in-slot ad playback. */
 export function resolvePlaybackAtContentTime(
   contentSeconds: number,
@@ -82,7 +140,14 @@ export function resolvePlaybackAtContentTime(
     }
   }
 
-  return { kind: "episode", episodeTime: clamped }
+  return {
+    kind: "episode",
+    episodeTime: contentTimeToEpisodeTime(
+      clamped,
+      markers,
+      options?.servedMarkerIds ?? new Set()
+    ),
+  }
 }
 
 export function getContentTimelineDuration(
@@ -94,6 +159,35 @@ export function getContentTimelineDuration(
     maxEnd = Math.max(maxEnd, marker.endSeconds)
   }
   return maxEnd
+}
+
+/** Episode source gaps on the content timeline (purple blocks between ad slots). */
+export type EpisodeSrcSegment = {
+  timelineStart: number
+  timelineEnd: number
+}
+
+export function getEpisodeSrcSegments(
+  timelineDuration: number,
+  markers: AdMarker[]
+): EpisodeSrcSegment[] {
+  const sorted = sortMarkers(markers)
+  const segments: EpisodeSrcSegment[] = []
+  let cursor = 0
+
+  for (const marker of sorted) {
+    const gapEnd = Math.min(marker.startSeconds, timelineDuration)
+    if (gapEnd > cursor + 0.001) {
+      segments.push({ timelineStart: cursor, timelineEnd: gapEnd })
+    }
+    cursor = Math.max(cursor, marker.endSeconds)
+  }
+
+  if (cursor < timelineDuration - 0.001) {
+    segments.push({ timelineStart: cursor, timelineEnd: timelineDuration })
+  }
+
+  return segments
 }
 
 export function getAdSlotDuration(marker: AdMarker): number {
@@ -129,10 +223,12 @@ export function getDisplayContentTime(
   phase: "episode" | "ad",
   episodeTime: number,
   marker: AdMarker | null,
-  adOffset: number
+  adOffset: number,
+  markers: AdMarker[] = [],
+  servedMarkerIds: ReadonlySet<string> = new Set()
 ): number {
   if (phase === "ad" && marker) {
     return marker.startSeconds + adOffset
   }
-  return episodeTime
+  return episodeTimeToContentTime(episodeTime, markers, servedMarkerIds)
 }

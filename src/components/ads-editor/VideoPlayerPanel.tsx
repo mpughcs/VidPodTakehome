@@ -77,23 +77,23 @@ export function VideoPlayerPanel({ episode }: VideoPlayerPanelProps) {
       ) : (
         <div className=" bg-white rounded-xl border border-slate-200  p-4 shadow-sm">
           <div className="relative overflow-hidden rounded-xl ">
-            <div className="aspect-video w-full">
+            <div className="relative aspect-video w-full">
               <InterstitialPreview
                 episodeSrc={episode.src}
                 playing={playing}
                 onPlayingChange={setPlaying}
               />
+              {isAdPlaying && (
+                <button
+                  type="button"
+                  onClick={skipAd}
+                  className="absolute bottom-3 right-3 z-10 flex items-center gap-1.5 rounded-full bg-black/70 px-3 py-1.5 text-sm text-white hover:bg-black/85"
+                >
+                  <FaForward className="h-4 w-4" />
+                  Skip ad
+                </button>
+              )}
             </div>
-            {isAdPlaying && (
-              <button
-                type="button"
-                onClick={skipAd}
-                className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-full bg-black/70 px-3 py-1.5 text-sm text-white hover:bg-black/85"
-              >
-                <FaForward className="h-4 w-4" />
-                Skip ad
-              </button>
-            )}
 
             <div className="flex items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 shadow-sm mt-4">
               <button
