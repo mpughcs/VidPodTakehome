@@ -59,6 +59,67 @@
   background: var(--ads-timeline-src-wave);
 }
 
+/* Ad marker clips — rounded accent card with letter pill + drag grip */
+.ads-custom-timeline .ads-timeline-ad-card {
+  --ad-body: #cbd5e1;
+  --ad-accent: #475569;
+  position: absolute;
+  inset: 2px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 4px 8px;
+  border-radius: 8px;
+  background: var(--ad-body);
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.ads-custom-timeline .ads-timeline-ad-card[data-mode="auto"] {
+  --ad-body: #86efac;
+  --ad-accent: #15803d;
+}
+
+.ads-custom-timeline .ads-timeline-ad-card[data-mode="static"] {
+  --ad-body: #93c5fd;
+  --ad-accent: #2456a6;
+}
+
+.ads-custom-timeline .ads-timeline-ad-card[data-mode="ab"] {
+  --ad-body: #fdba74;
+  --ad-accent: #9a4d0c;
+}
+
+.ads-custom-timeline .ads-timeline-ad-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border: 1.5px solid var(--ad-accent);
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--ad-accent);
+}
+
+.ads-custom-timeline .ads-timeline-ad-grip {
+  display: grid;
+  grid-template-columns: repeat(2, 3px);
+  grid-auto-rows: 3px;
+  gap: 2px;
+}
+
+.ads-custom-timeline .ads-timeline-ad-grip span {
+  width: 3px;
+  height: 3px;
+  border-radius: 9999px;
+  background: var(--ad-accent);
+}
+
 /* Playhead — red line with a grip handle floating above the frame */
 .ads-custom-timeline .ads-timeline-playhead {
   position: absolute;

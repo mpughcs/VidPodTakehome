@@ -28,7 +28,7 @@ function TimelineToolbar({
   const { canUndo, canRedo, editor } = useTimelineContext()
 
   return (
-    <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
+    <div className="flex flex-wrap items-center justify-between gap-4">
       <div className="flex gap-2 text-md font-normal">
         <button
           type="button"

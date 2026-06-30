@@ -60,17 +60,6 @@ function viewportStartToScrollLeft(
   return (viewportStart / maxStart) * maxScroll
 }
 
-const ELEMENT_COLORS: Record<string, string> = {
-  auto: "bg-emerald-400",
-  static: "bg-sky-400",
-  ab: "bg-amber-400",
-}
-
-function getElementColor(element: ElementJSON) {
-  const adMode = element.props?.adMode as string | undefined
-  return ELEMENT_COLORS[adMode ?? element.type] ?? "bg-slate-400"
-}
-
 function getElementLabel(element: ElementJSON) {
   if (element.props?.adMode === "static") return "S"
   if (element.props?.adMode === "ab") return "A/B"
@@ -475,12 +464,18 @@ function DraggableAdClip({
       onClick={(event) => event.stopPropagation()}
     >
       <div
-        className={clsx(
-          "pointer-events-none absolute inset-0 flex items-start justify-center rounded-t pt-1 text-xs font-bold text-white shadow-sm",
-          getElementColor(element)
-        )}
+        className="ads-timeline-ad-card"
+        data-mode={element.props?.adMode as string | undefined}
       >
-        {getElementLabel(element)}
+        <span className="ads-timeline-ad-pill">{getElementLabel(element)}</span>
+        <span className="ads-timeline-ad-grip" aria-hidden>
+          <span />
+          <span />
+          <span />
+          <span />
+          <span />
+          <span />
+        </span>
       </div>
       {!disabled && (
         <>
