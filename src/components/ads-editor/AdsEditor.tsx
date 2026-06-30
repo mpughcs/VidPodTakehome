@@ -41,11 +41,11 @@ export function AdsEditor({ episode }: AdsEditorProps) {
         </p>
       </header>
 
-      <div className="flex min-w-0 gap-6 lg:flex-row flex-col">
-        <div className="min-w-[300px]">
+      <div className="flex min-w-0 flex-col gap-6 xl:flex-row">
+        <div className="min-w-0 xl:w-[340px] xl:flex-none">
           <AdMarkersPanel />
         </div>
-        <div className="flex-1">
+        <div className="min-w-0 xl:flex-1">
           <VideoPlayerPanel episode={episode} />
         </div>
       </div>

@@ -135,7 +135,7 @@ export function AdMarkersPanel() {
           <button
             type="button"
             disabled={!selectedEpisodeHasSrc}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-40"
+            className="flex w-full items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-40"
             onClick={() => autoPlaceMarkers()}
           >
             <Wand2 className="h-4 w-4" />

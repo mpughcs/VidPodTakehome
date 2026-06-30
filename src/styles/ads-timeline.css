@@ -1,190 +1,125 @@
-/* Scoped timeline chrome — Twick track/ruler look without global video-editor.css */
+/* Scoped timeline chrome — single framed lane matching the reference mockup */
 
 .ads-custom-timeline {
-  --ads-timeline-slate-50: #f8fafc;
   --ads-timeline-slate-100: #f1f5f9;
   --ads-timeline-slate-200: #e2e8f0;
+  --ads-timeline-slate-300: #cbd5e1;
   --ads-timeline-slate-400: #94a3b8;
-  --ads-timeline-slate-500: #64748b;
-  --ads-timeline-slate-700: #334155;
+  --ads-timeline-frame: #18181a;
+  --ads-timeline-src: #efacfc;
+  --ads-timeline-src-wave: #fbc4ff;
   --ads-timeline-playhead: #ef4444;
 }
 
 .ads-custom-timeline .ads-timeline-scroll {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  min-height: 220px;
   overflow-x: auto;
   overflow-y: hidden;
-  border: 1px solid var(--ads-timeline-slate-200);
-  border-radius: 1rem;
-  background: var(--ads-timeline-slate-50);
-  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  /* Leave room above the frame for the playhead handle. overflow-y can't be
+     `visible` while overflow-x scrolls, so the handle must fit inside this box. */
+  padding-top: 36px;
 }
 
 .ads-custom-timeline .ads-timeline-inner {
   min-width: 100%;
 }
 
-.ads-custom-timeline .ads-timeline-ruler {
+/* Black rounded frame around the single lane */
+.ads-custom-timeline .ads-timeline-frame {
   position: relative;
-  display: flex;
-  width: 100%;
-  height: 2rem;
-  border-bottom: 1px solid var(--ads-timeline-slate-100);
-  background: #fff;
+  border: 4px solid var(--ads-timeline-frame);
+  border-radius: 12px;
+  background: var(--ads-timeline-frame);
+  overflow: visible;
 }
 
-.ads-custom-timeline .ads-timeline-ruler-gutter {
-  position: sticky;
-  left: 0;
-  z-index: 20;
-  flex: none;
-  width: 40px;
-  background: #fff;
-  border-right: 1px solid var(--ads-timeline-slate-100);
-}
-
-.ads-custom-timeline .ads-timeline-ruler-track {
+/* The src/episode track: full-width magenta lane that hosts ad overlays */
+.ads-custom-timeline .ads-timeline-lane {
   position: relative;
-  flex: 1;
-  min-width: 0;
-  height: 100%;
+  height: 92px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--ads-timeline-src);
 }
 
-.ads-custom-timeline .ads-timeline-ruler-labels {
-  display: flex;
-  justify-content: space-between;
-  height: 100%;
-  padding: 0 0.5rem;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 0.65rem;
-  line-height: 2rem;
-  color: var(--ads-timeline-slate-400);
-}
-
-.ads-custom-timeline .ads-timeline-tracks {
-  position: relative;
-  padding: 0.25rem 0.75rem 0.75rem;
-}
-
-.ads-custom-timeline .ads-timeline-playhead-layer {
+/* Decorative waveform for the src track */
+.ads-custom-timeline .ads-timeline-waveform {
   position: absolute;
-  top: 0.25rem;
-  right: 0.75rem;
-  bottom: 0.75rem;
-  left: calc(0.75rem + 40px);
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 6px;
   pointer-events: none;
 }
 
+.ads-custom-timeline .ads-timeline-waveform span {
+  flex: 0 0 2px;
+  width: 2px;
+  border-radius: 9999px;
+  background: var(--ads-timeline-src-wave);
+}
+
+/* Playhead — red line with a grip handle floating above the frame */
 .ads-custom-timeline .ads-timeline-playhead {
   position: absolute;
-  top: 0;
-  bottom: 0;
-  z-index: 30;
+  top: -6px;
+  bottom: -2px;
   width: 2px;
+  z-index: 30;
   background: var(--ads-timeline-playhead);
-  box-shadow: 0 0 6px rgb(239 68 68 / 0.55);
-  pointer-events: none;
   transform: translateX(-50%);
+  pointer-events: none;
 }
 
 .ads-custom-timeline .ads-timeline-playhead-handle {
   position: absolute;
-  top: 0;
+  top: -6px;
   left: 50%;
-  width: 0.75rem;
-  height: 0.75rem;
-  border-radius: 9999px;
+  transform: translate(-50%, -100%);
+  display: grid;
+  grid-template-columns: repeat(2, 3px);
+  grid-auto-rows: 3px;
+  gap: 2px;
+  padding: 4px;
+  border-radius: 5px;
   background: var(--ads-timeline-playhead);
-  box-shadow: 0 1px 4px rgb(0 0 0 / 0.2);
-  transform: translate(-50%, -50%);
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.25);
 }
 
-.ads-custom-timeline .ads-timeline-track-row {
-  position: relative;
-  display: flex;
-  min-width: 100%;
-  height: 3.5rem;
-  margin-top: 2px;
-}
-
-.ads-custom-timeline .ads-timeline-track-gutter {
-  position: sticky;
-  left: 0;
-  z-index: 10;
-  flex: none;
-  width: 40px;
+.ads-custom-timeline .ads-timeline-playhead-handle span {
+  width: 3px;
+  height: 3px;
+  border-radius: 9999px;
   background: #fff;
-  border-right: 1px solid var(--ads-timeline-slate-100);
 }
 
-.ads-custom-timeline .ads-timeline-track {
+/* Ruler below the framed lane */
+.ads-custom-timeline .ads-timeline-ruler {
   position: relative;
-  flex: 1;
-  min-width: 0;
-  height: 100%;
-  overflow: hidden;
-  background: rgb(255 255 255 / 0.65);
+  height: 30px;
+  margin-top: 6px;
 }
 
-/* Episode clip — Twick-style purple chrome + real video thumbnails */
-.ads-custom-timeline .ads-timeline-episode-clip {
+.ads-custom-timeline .ads-timeline-tick {
   position: absolute;
-  top: 2px;
-  height: calc(100% - 4px);
-  overflow: hidden;
-  border-radius: 0.5rem 0.5rem 0 0;
-  background-color: #8b5fbf;
-  pointer-events: none;
-  cursor: default;
+  top: 0;
+  width: 1px;
+  height: 5px;
+  background: var(--ads-timeline-slate-300);
+  transform: translateX(-50%);
 }
 
-.ads-custom-timeline .ads-timeline-media-strip {
+.ads-custom-timeline .ads-timeline-tick-major {
+  height: 8px;
+  background: var(--ads-timeline-slate-400);
+}
+
+.ads-custom-timeline .ads-timeline-ruler-label {
   position: absolute;
-  inset: 0;
-  display: flex;
-  overflow: hidden;
-  pointer-events: none;
-  border-radius: 0.5rem 0.5rem 0 0;
-}
-
-.ads-custom-timeline .ads-timeline-media-strip-video {
-  background: linear-gradient(180deg,
-      rgb(196 181 253 / 0.35) 0%,
-      rgb(139 92 246 / 0.2) 100%);
-}
-
-.ads-custom-timeline .ads-timeline-media-strip-thumb {
-  flex: 1 0 0;
-  width: 0;
-  height: 100%;
-  object-fit: cover;
-  user-select: none;
-}
-
-.ads-custom-timeline .ads-timeline-episode-strip-fallback {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg,
-      rgb(196 181 253 / 0.7) 0%,
-      rgb(139 92 246 / 0.45) 100%);
-}
-
-.ads-custom-timeline .ads-timeline-episode-label {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
-  padding: 0.25rem;
-  overflow: hidden;
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: #fff;
-  user-select: none;
-  text-shadow: 0 1px 2px rgb(0 0 0 / 0.35);
+  top: 13px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.65rem;
+  line-height: 1;
+  white-space: nowrap;
+  color: var(--ads-timeline-slate-400);
 }

@@ -15,37 +15,24 @@ import {
 } from "@twick/timeline"
 
 import { useAdsTimeline } from "@/context/AdsTimelineContext"
-import { EpisodeVideoStrip } from "@/components/ads-editor/timeline/EpisodeVideoStrip"
-import { isAdMarkerElement, AD_MARKERS_TRACK_ID, AD_MARKERS_TRACK_NAME, patchAdMarkerTimesInProject } from "@/lib/ad-markers-timeline"
+import { isAdMarkerElement, patchAdMarkerTimesInProject } from "@/lib/ad-markers-timeline"
 
 import "@/styles/ads-timeline.css"
 
 const FALLBACK_DURATION_SECONDS = 300
 const MIN_AD_CLIP_SECONDS = 1
-const TRACK_GUTTER_PX = 40
+const WAVEFORM_BAR_SPACING_PX = 6
 
 export { TIMELINE_ZOOM_MAX, TIMELINE_ZOOM_MIN } from "@/lib/timeline-viewport"
 
-function getLaneStartInInner(tracksEl: HTMLElement): number {
-  const tracksPadLeft =
-    Number.parseFloat(getComputedStyle(tracksEl).paddingLeft) || 0
-  return tracksPadLeft + TRACK_GUTTER_PX
-}
-
 function getTimeFromClientX(
   clientX: number,
-  scrollEl: HTMLElement,
-  tracksEl: HTMLElement,
   laneEl: HTMLElement,
   timelineDuration: number
 ) {
-  const scrollRect = scrollEl.getBoundingClientRect()
-  const laneStart = getLaneStartInInner(tracksEl)
-  const xInInner = clientX - scrollRect.left + scrollEl.scrollLeft
-  const xInLane = xInInner - laneStart
-  const laneWidth = laneEl.offsetWidth
-  if (laneWidth <= 0) return 0
-  const ratio = xInLane / laneWidth
+  const rect = laneEl.getBoundingClientRect()
+  if (rect.width <= 0) return 0
+  const ratio = (clientX - rect.left) / rect.width
   return Math.min(timelineDuration, Math.max(0, ratio * timelineDuration))
 }
 
@@ -74,16 +61,14 @@ function viewportStartToScrollLeft(
 }
 
 const ELEMENT_COLORS: Record<string, string> = {
-  episode: "bg-violet-300",
   auto: "bg-emerald-400",
   static: "bg-sky-400",
   ab: "bg-amber-400",
 }
 
 function getElementColor(element: ElementJSON) {
-  const role = element.props?.role as string | undefined
   const adMode = element.props?.adMode as string | undefined
-  return ELEMENT_COLORS[adMode ?? role ?? element.type] ?? "bg-slate-400"
+  return ELEMENT_COLORS[adMode ?? element.type] ?? "bg-slate-400"
 }
 
 function getElementLabel(element: ElementJSON) {
@@ -111,12 +96,11 @@ export function TwickTimelineRenderer({
   const { present } = useTimelineContext()
   const { currentTime, seekTo, isAdPlaying, setTimelineDragging } = useAdsTimeline()
   const scrollRef = useRef<HTMLDivElement>(null)
-  const tracksRef = useRef<HTMLDivElement>(null)
   const laneRef = useRef<HTMLDivElement>(null)
   const draggingRef = useRef(false)
   const syncingScrollRef = useRef(false)
 
-  const tracks = present?.tracks ?? []
+  const tracks: TrackJSON[] = present?.tracks ?? []
   const timelineDuration = useMemo(
     () => getTimelineDuration(tracks, durationSeconds),
     [tracks, durationSeconds]
@@ -128,6 +112,14 @@ export function TwickTimelineRenderer({
     visibleDuration
   )
   const innerWidthPercent = Math.max(100, zoom * 100)
+
+  const adElements = useMemo(
+    () =>
+      tracks.flatMap((track) =>
+        track.elements.filter((element) => isAdMarkerElement(element))
+      ),
+    [tracks]
+  )
 
   useEffect(() => {
     if (clampedViewportStart !== viewportStart) {
@@ -168,91 +160,101 @@ export function TwickTimelineRenderer({
     onViewportStartChange?.(nextStart)
   }, [onViewportStartChange, timelineDuration, visibleDuration])
 
-  const timeLabels = useMemo(() => {
-    const interval =
-      timelineDuration <= 120 ? 30 : timelineDuration <= 600 ? 60 : 120
-    const labels: number[] = []
-    for (let t = 0; t <= timelineDuration; t += interval) {
-      labels.push(t)
+  const { majorTicks, minorTicks } = useMemo(() => {
+    const major = timelineDuration <= 120 ? 30 : timelineDuration <= 600 ? 60 : 120
+    const minor = major / 4
+    const majors: number[] = []
+    for (let t = 0; t <= timelineDuration + 0.001; t += major) majors.push(t)
+    const minors: number[] = []
+    for (let t = 0; t <= timelineDuration + 0.001; t += minor) {
+      if (t % major !== 0) minors.push(t)
     }
-    return labels
+    return { majorTicks: majors, minorTicks: minors }
   }, [timelineDuration])
 
   const seekFromClientX = useCallback(
     (clientX: number) => {
       if (isAdPlaying || draggingRef.current) return
-      const scrollEl = scrollRef.current
-      const tracksEl = tracksRef.current
       const laneEl = laneRef.current
-      if (!scrollEl || !tracksEl || !laneEl) return
-      seekTo(
-        getTimeFromClientX(
-          clientX,
-          scrollEl,
-          tracksEl,
-          laneEl,
-          timelineDuration
-        )
-      )
+      if (!laneEl) return
+      seekTo(getTimeFromClientX(clientX, laneEl, timelineDuration))
     },
     [isAdPlaying, seekTo, timelineDuration]
   )
 
+  const onDragStateChange = useCallback(
+    (dragging: boolean) => {
+      draggingRef.current = dragging
+      setTimelineDragging(dragging)
+    },
+    [setTimelineDragging]
+  )
+
   return (
     <div className="ads-custom-timeline">
-      <div
-        ref={scrollRef}
-        className="ads-timeline-scroll"
-        onScroll={handleScroll}
-      >
+      <div ref={scrollRef} className="ads-timeline-scroll" onScroll={handleScroll}>
         <div
           className="ads-timeline-inner"
           style={{ width: `${innerWidthPercent}%` }}
         >
-          <div className="ads-timeline-ruler">
-            <div className="ads-timeline-ruler-gutter" aria-hidden />
-            <div className="ads-timeline-ruler-track">
-              <div className="ads-timeline-ruler-labels">
-                {timeLabels.map((seconds) => (
-                  <span key={seconds}>{formatTimeHms(seconds)}</span>
-                ))}
-              </div>
-            </div>
-          </div>
+          <div className="ads-timeline-frame">
+            <div
+              ref={laneRef}
+              className={clsx(
+                "ads-timeline-lane",
+                isAdPlaying ? "cursor-not-allowed" : "cursor-pointer"
+              )}
+              onClick={(e) => seekFromClientX(e.clientX)}
+              role="presentation"
+              title={
+                isAdPlaying ? "Timeline locked during ad playback" : undefined
+              }
+            >
+              <SrcWaveform />
 
-          <div
-            ref={tracksRef}
-            className={clsx(
-              "ads-timeline-tracks",
-              isAdPlaying ? "cursor-not-allowed opacity-60" : "cursor-pointer"
-            )}
-            onClick={(e) => seekFromClientX(e.clientX)}
-            role="presentation"
-            title={isAdPlaying ? "Timeline locked during ad playback" : undefined}
-          >
-            <div className="space-y-0">
-              {tracks.map((track, index) => (
-                <TimelineTrackRow
-                  key={track.id}
-                  track={track}
+              {adElements.map((element) => (
+                <DraggableAdClip
+                  key={element.id}
+                  element={element}
                   timelineDuration={timelineDuration}
-                  attachLaneRef={index === 0}
                   laneMeasureRef={laneRef}
                   disabled={isAdPlaying}
-                  onDragStateChange={(dragging) => {
-                    draggingRef.current = dragging
-                    setTimelineDragging(dragging)
-                  }}
+                  onDragStateChange={onDragStateChange}
                 />
               ))}
             </div>
 
-            <div className="ads-timeline-playhead-layer" aria-hidden>
-              <Playhead
-                playhead={currentTime}
-                timelineDuration={timelineDuration}
+            <Playhead playhead={currentTime} timelineDuration={timelineDuration} />
+          </div>
+
+          <div className="ads-timeline-ruler" aria-hidden>
+            {minorTicks.map((t) => (
+              <i
+                key={`minor-${t}`}
+                className="ads-timeline-tick"
+                style={{ left: `${(t / timelineDuration) * 100}%` }}
               />
-            </div>
+            ))}
+            {majorTicks.map((t, index) => {
+              const pct = (t / timelineDuration) * 100
+              const isFirst = index === 0
+              const isLast = index === majorTicks.length - 1
+              const translate = isFirst ? "0" : isLast ? "-100%" : "-50%"
+              return (
+                <span key={`major-${t}`}>
+                  <i
+                    className="ads-timeline-tick ads-timeline-tick-major"
+                    style={{ left: `${pct}%` }}
+                  />
+                  <span
+                    className="ads-timeline-ruler-label"
+                    style={{ left: `${pct}%`, transform: `translateX(${translate})` }}
+                  >
+                    {formatTimeHms(t)}
+                  </span>
+                </span>
+              )
+            })}
           </div>
         </div>
       </div>
@@ -260,118 +262,37 @@ export function TwickTimelineRenderer({
   )
 }
 
-function TimelineTrackRow({
-  track,
-  timelineDuration,
-  attachLaneRef,
-  laneMeasureRef,
-  disabled,
-  onDragStateChange,
-}: {
-  track: TrackJSON
-  timelineDuration: number
-  attachLaneRef: boolean
-  laneMeasureRef: React.RefObject<HTMLDivElement | null>
-  disabled: boolean
-  onDragStateChange: (dragging: boolean) => void
-}) {
-  const isAdTrack =
-    track.id === AD_MARKERS_TRACK_ID || track.name === AD_MARKERS_TRACK_NAME
-  const isEpisodeTrack = track.elements.some(
-    (element) => element.props?.role === "episode"
-  )
-
-  return (
-    <div className="ads-timeline-track-row">
-      <div className="ads-timeline-track-gutter" aria-hidden />
-      <div
-        ref={attachLaneRef ? laneMeasureRef : undefined}
-        className={clsx(
-          "ads-timeline-track",
-          isAdTrack && "ads-timeline-track-ads",
-          isEpisodeTrack && "ads-timeline-track-episode"
-        )}
-      >
-        {track.elements.map((element) => {
-        const left = (element.s / timelineDuration) * 100
-        const width = ((element.e - element.s) / timelineDuration) * 100
-
-        if (isAdMarkerElement(element)) {
-          return (
-            <DraggableAdClip
-              key={element.id}
-              element={element}
-              timelineDuration={timelineDuration}
-              laneMeasureRef={laneMeasureRef}
-              disabled={disabled}
-              onDragStateChange={onDragStateChange}
-            />
-          )
-        }
-
-        if (element.props?.role === "episode") {
-          return (
-            <EpisodeTimelineClip
-              key={element.id}
-              element={element}
-              left={left}
-              width={width}
-            />
-          )
-        }
-
-        return (
-          <div
-            key={element.id}
-            className={clsx(
-              "ads-timeline-ad-clip absolute bottom-0 top-0 flex items-start justify-center rounded-t pt-1 text-xs font-bold text-white shadow-sm",
-              getElementColor(element)
-            )}
-            style={{ left: `${left}%`, width: `${Math.max(width, 1)}%` }}
-            title={`${element.name} (${formatTimeHms(element.s)} – ${formatTimeHms(element.e)})`}
-          >
-            {getElementLabel(element)}
-          </div>
-        )
-        })}
-      </div>
-    </div>
-  )
+function pseudoRandom(index: number) {
+  const x = Math.sin(index * 12.9898 + 1.2345) * 43758.5453
+  return x - Math.floor(x)
 }
 
-function EpisodeTimelineClip({
-  element,
-  left,
-  width,
-}: {
-  element: ElementJSON
-  left: number
-  width: number
-}) {
-  const { episodeSrc, episodeDurationSeconds } = useAdsTimeline()
-  const clipDuration = Math.max(0.001, element.e - element.s)
-  const mediaOffset =
-    typeof element.props?.time === "number" ? element.props.time : 0
+function SrcWaveform() {
+  const ref = useRef<HTMLDivElement>(null)
+  const [count, setCount] = useState(120)
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const observer = new ResizeObserver(([entry]) => {
+      const width = entry.contentRect.width
+      setCount(Math.max(8, Math.floor(width / WAVEFORM_BAR_SPACING_PX)))
+    })
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+
+  const heights = useMemo(
+    () =>
+      Array.from({ length: count }, (_value, index) => 16 + pseudoRandom(index) * 74),
+    [count]
+  )
 
   return (
-    <div
-      className="ads-timeline-episode-clip"
-      style={{ left: `${left}%`, width: `${Math.max(width, 1)}%` }}
-      title={`${element.name} (${formatTimeHms(element.s)} – ${formatTimeHms(element.e)})`}
-    >
-      {episodeSrc ? (
-        <EpisodeVideoStrip
-          src={episodeSrc}
-          durationSec={clipDuration}
-          mediaOffsetSec={mediaOffset}
-          mediaDurationSec={episodeDurationSeconds}
-        />
-      ) : (
-        <div className="ads-timeline-episode-strip-fallback" aria-hidden />
-      )}
-      <span className="ads-timeline-episode-label">
-        {getElementLabel(element)}
-      </span>
+    <div ref={ref} className="ads-timeline-waveform" aria-hidden>
+      {heights.map((height, index) => (
+        <span key={index} style={{ height: `${height}%` }} />
+      ))}
     </div>
   )
 }
@@ -595,11 +516,15 @@ function Playhead({
   const left = (playhead / timelineDuration) * 100
 
   return (
-    <div
-      className="ads-timeline-playhead"
-      style={{ left: `${left}%` }}
-    >
-      <div className="ads-timeline-playhead-handle" />
+    <div className="ads-timeline-playhead" style={{ left: `${left}%` }}>
+      <div className="ads-timeline-playhead-handle">
+        <span />
+        <span />
+        <span />
+        <span />
+        <span />
+        <span />
+      </div>
     </div>
   )
 }

@@ -95,7 +95,7 @@ export function VideoPlayerPanel({ episode }: VideoPlayerPanelProps) {
               </button>
             )}
 
-            <div className="flex items-center justify-between  rounded-xl border border-slate-200 bg-white px-4 py-1 shadow-sm mt-4">
+            <div className="flex items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 shadow-sm mt-4">
               <button
                 type="button"
                 disabled={seekDisabled}
@@ -106,7 +106,7 @@ export function VideoPlayerPanel({ episode }: VideoPlayerPanelProps) {
                 <div className="rounded-full border border-slate-200 p-2">
                   <PiArrowLineLeftFill className="h-4 w-4" />
                 </div>
-                <span className="text-xs font-semibold text-slate-500 ml-2">Jump to start</span>
+                <span className="text-xs font-semibold text-slate-500 ml-2 whitespace-nowrap">Jump to start</span>
               </button>
 
               <button
@@ -169,7 +169,7 @@ export function VideoPlayerPanel({ episode }: VideoPlayerPanelProps) {
                 className="flex items-center justify-end rounded-lg text-slate-500 transition-colors hover:bg-slate-100 disabled:opacity-30  max-w-[120px] ml-auto  m-1"
                 aria-label="Jump to end"
               >
-                <span className="text-xs font-semibold text-slate-500 mr-2">Jump to end</span>
+                <span className="text-xs font-semibold text-slate-500 mr-2 whitespace-nowrap">Jump to end</span>
                 <div className="rounded-full border border-slate-200 p-2">
                   <PiArrowLineRightFill className="h-4 w-4" />
                 </div>
