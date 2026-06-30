@@ -1,9 +1,14 @@
 "use client"
 
-import { useCallback, useMemo, useRef, useState, type PointerEvent } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent } from "react"
 import clsx from "clsx"
+import { formatTimeHms } from "@/lib/time-format"
 import {
-  formatTimeSimple,
+  clampViewportStart,
+  getTimelineDuration,
+  getVisibleDuration,
+} from "@/lib/timeline-viewport"
+import {
   useTimelineContext,
   type ElementJSON,
   type TrackJSON,
@@ -18,18 +23,54 @@ import "@/styles/ads-timeline.css"
 const FALLBACK_DURATION_SECONDS = 300
 const MIN_AD_CLIP_SECONDS = 1
 const TRACK_GUTTER_PX = 40
-export const TIMELINE_ZOOM_MIN = 0.5
-export const TIMELINE_ZOOM_MAX = 2
-export const TIMELINE_ZOOM_STEP = 0.25
- 
-function getLaneMetrics(container: HTMLElement) {
-  const rect = container.getBoundingClientRect()
-  const styles = getComputedStyle(container)
-  const padLeft = Number.parseFloat(styles.paddingLeft) || 0
-  const padRight = Number.parseFloat(styles.paddingRight) || 0
-  const laneLeft = rect.left + padLeft + TRACK_GUTTER_PX
-  const laneWidth = rect.width - padLeft - padRight - TRACK_GUTTER_PX
-  return { laneLeft, laneWidth: Math.max(laneWidth, 1) }
+
+export { TIMELINE_ZOOM_MAX, TIMELINE_ZOOM_MIN } from "@/lib/timeline-viewport"
+
+function getLaneStartInInner(tracksEl: HTMLElement): number {
+  const tracksPadLeft =
+    Number.parseFloat(getComputedStyle(tracksEl).paddingLeft) || 0
+  return tracksPadLeft + TRACK_GUTTER_PX
+}
+
+function getTimeFromClientX(
+  clientX: number,
+  scrollEl: HTMLElement,
+  tracksEl: HTMLElement,
+  laneEl: HTMLElement,
+  timelineDuration: number
+) {
+  const scrollRect = scrollEl.getBoundingClientRect()
+  const laneStart = getLaneStartInInner(tracksEl)
+  const xInInner = clientX - scrollRect.left + scrollEl.scrollLeft
+  const xInLane = xInInner - laneStart
+  const laneWidth = laneEl.offsetWidth
+  if (laneWidth <= 0) return 0
+  const ratio = xInLane / laneWidth
+  return Math.min(timelineDuration, Math.max(0, ratio * timelineDuration))
+}
+
+function scrollLeftToViewportStart(
+  scrollLeft: number,
+  scrollEl: HTMLElement,
+  timelineDuration: number,
+  visibleDuration: number
+) {
+  const maxScroll = scrollEl.scrollWidth - scrollEl.clientWidth
+  const maxStart = Math.max(0, timelineDuration - visibleDuration)
+  if (maxScroll <= 0 || maxStart <= 0) return 0
+  return (scrollLeft / maxScroll) * maxStart
+}
+
+function viewportStartToScrollLeft(
+  viewportStart: number,
+  scrollEl: HTMLElement,
+  timelineDuration: number,
+  visibleDuration: number
+) {
+  const maxScroll = scrollEl.scrollWidth - scrollEl.clientWidth
+  const maxStart = Math.max(0, timelineDuration - visibleDuration)
+  if (maxScroll <= 0 || maxStart <= 0) return 0
+  return (viewportStart / maxStart) * maxScroll
 }
 
 const ELEMENT_COLORS: Record<string, string> = {
@@ -55,7 +96,8 @@ function getElementLabel(element: ElementJSON) {
 type TwickTimelineRendererProps = {
   durationSeconds?: number
   zoom?: number
-  onZoomChange?: (zoom: number) => void
+  viewportStart?: number
+  onViewportStartChange?: (start: number) => void
 }
 
 type AdDragMode = "move" | "start" | "end"
@@ -63,105 +105,154 @@ type AdDragMode = "move" | "start" | "end"
 export function TwickTimelineRenderer({
   durationSeconds = FALLBACK_DURATION_SECONDS,
   zoom = 1,
-  onZoomChange,
+  viewportStart = 0,
+  onViewportStartChange,
 }: TwickTimelineRendererProps) {
   const { present } = useTimelineContext()
   const { currentTime, seekTo, isAdPlaying, setTimelineDragging } = useAdsTimeline()
-  const trackRef = useRef<HTMLDivElement>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const tracksRef = useRef<HTMLDivElement>(null)
+  const laneRef = useRef<HTMLDivElement>(null)
   const draggingRef = useRef(false)
+  const syncingScrollRef = useRef(false)
 
   const tracks = present?.tracks ?? []
-  const timelineDuration = useMemo(() => {
-    let maxEnd = 0
-    for (const track of tracks) {
-      for (const element of track.elements ?? []) {
-        maxEnd = Math.max(maxEnd, element.e)
-      }
+  const timelineDuration = useMemo(
+    () => getTimelineDuration(tracks, durationSeconds),
+    [tracks, durationSeconds]
+  )
+  const visibleDuration = getVisibleDuration(timelineDuration, zoom)
+  const clampedViewportStart = clampViewportStart(
+    viewportStart,
+    timelineDuration,
+    visibleDuration
+  )
+  const innerWidthPercent = Math.max(100, zoom * 100)
+
+  useEffect(() => {
+    if (clampedViewportStart !== viewportStart) {
+      onViewportStartChange?.(clampedViewportStart)
     }
-    return maxEnd || durationSeconds
-  }, [tracks, durationSeconds])
-  const visibleDuration = timelineDuration / zoom
+  }, [clampedViewportStart, onViewportStartChange, viewportStart])
+
+  useEffect(() => {
+    const scrollEl = scrollRef.current
+    const laneEl = laneRef.current
+    if (!scrollEl || !laneEl) return
+
+    const targetScroll = viewportStartToScrollLeft(
+      clampedViewportStart,
+      scrollEl,
+      timelineDuration,
+      visibleDuration
+    )
+    if (Math.abs(scrollEl.scrollLeft - targetScroll) > 0.5) {
+      syncingScrollRef.current = true
+      scrollEl.scrollLeft = targetScroll
+      requestAnimationFrame(() => {
+        syncingScrollRef.current = false
+      })
+    }
+  }, [clampedViewportStart, timelineDuration, visibleDuration, innerWidthPercent])
+
+  const handleScroll = useCallback(() => {
+    if (syncingScrollRef.current) return
+    const scrollEl = scrollRef.current
+    if (!scrollEl) return
+    const nextStart = scrollLeftToViewportStart(
+      scrollEl.scrollLeft,
+      scrollEl,
+      timelineDuration,
+      visibleDuration
+    )
+    onViewportStartChange?.(nextStart)
+  }, [onViewportStartChange, timelineDuration, visibleDuration])
 
   const timeLabels = useMemo(() => {
-    const interval = visibleDuration <= 120 ? 30 : 60
+    const interval =
+      timelineDuration <= 120 ? 30 : timelineDuration <= 600 ? 60 : 120
     const labels: number[] = []
-    for (let t = 0; t <= visibleDuration; t += interval) {
+    for (let t = 0; t <= timelineDuration; t += interval) {
       labels.push(t)
     }
     return labels
-  }, [visibleDuration])
+  }, [timelineDuration])
 
   const seekFromClientX = useCallback(
     (clientX: number) => {
       if (isAdPlaying || draggingRef.current) return
-      const el = trackRef.current
-      if (!el) return
-      const { laneLeft, laneWidth } = getLaneMetrics(el)
-      const ratio = Math.min(
-        1,
-        Math.max(0, (clientX - laneLeft) / laneWidth)
+      const scrollEl = scrollRef.current
+      const tracksEl = tracksRef.current
+      const laneEl = laneRef.current
+      if (!scrollEl || !tracksEl || !laneEl) return
+      seekTo(
+        getTimeFromClientX(
+          clientX,
+          scrollEl,
+          tracksEl,
+          laneEl,
+          timelineDuration
+        )
       )
-      seekTo(ratio * visibleDuration)
     },
-    [isAdPlaying, seekTo, visibleDuration]
+    [isAdPlaying, seekTo, timelineDuration]
   )
 
   return (
     <div className="ads-custom-timeline">
-      <div className="ads-timeline-scroll">
-        <div className="ads-timeline-ruler">
-          <div className="ads-timeline-ruler-gutter" aria-hidden />
-          <div className="ads-timeline-ruler-track">
-            <div className="ads-timeline-ruler-labels">
-              {timeLabels.map((seconds) => (
-                <span key={seconds}>{formatTimeSimple(seconds)}</span>
-              ))}
+      <div
+        ref={scrollRef}
+        className="ads-timeline-scroll"
+        onScroll={handleScroll}
+      >
+        <div
+          className="ads-timeline-inner"
+          style={{ width: `${innerWidthPercent}%` }}
+        >
+          <div className="ads-timeline-ruler">
+            <div className="ads-timeline-ruler-gutter" aria-hidden />
+            <div className="ads-timeline-ruler-track">
+              <div className="ads-timeline-ruler-labels">
+                {timeLabels.map((seconds) => (
+                  <span key={seconds}>{formatTimeHms(seconds)}</span>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
 
-        <div
-          ref={trackRef}
-          className={clsx(
-            "ads-timeline-tracks",
-            isAdPlaying ? "cursor-not-allowed opacity-60" : "cursor-pointer"
-          )}
-          onClick={(e) => seekFromClientX(e.clientX)}
-          role="presentation"
-          title={isAdPlaying ? "Timeline locked during ad playback" : undefined}
-        >
-          <div className="space-y-0">
-            {tracks.map((track) => (
-              <TimelineTrackRow
-                key={track.id}
-                track={track}
-                durationSeconds={visibleDuration}
-                trackContainerRef={trackRef}
-                disabled={isAdPlaying}
-                onDragStateChange={(dragging) => {
-                  draggingRef.current = dragging
-                  setTimelineDragging(dragging)
-                }}
+          <div
+            ref={tracksRef}
+            className={clsx(
+              "ads-timeline-tracks",
+              isAdPlaying ? "cursor-not-allowed opacity-60" : "cursor-pointer"
+            )}
+            onClick={(e) => seekFromClientX(e.clientX)}
+            role="presentation"
+            title={isAdPlaying ? "Timeline locked during ad playback" : undefined}
+          >
+            <div className="space-y-0">
+              {tracks.map((track, index) => (
+                <TimelineTrackRow
+                  key={track.id}
+                  track={track}
+                  timelineDuration={timelineDuration}
+                  attachLaneRef={index === 0}
+                  laneMeasureRef={laneRef}
+                  disabled={isAdPlaying}
+                  onDragStateChange={(dragging) => {
+                    draggingRef.current = dragging
+                    setTimelineDragging(dragging)
+                  }}
+                />
+              ))}
+            </div>
+
+            <div className="ads-timeline-playhead-layer" aria-hidden>
+              <Playhead
+                playhead={currentTime}
+                timelineDuration={timelineDuration}
               />
-            ))}
-          </div>
-
-          <Playhead playhead={currentTime} durationSeconds={visibleDuration} />
-        </div>
-
-        <div className="ads-timeline-footer">
-          <input
-            type="range"
-            min={TIMELINE_ZOOM_MIN}
-            max={TIMELINE_ZOOM_MAX}
-            step={TIMELINE_ZOOM_STEP}
-            value={zoom}
-            onChange={(e) => onZoomChange?.(Number(e.target.value))}
-            className="range range-xs w-full"
-            aria-label="Timeline zoom"
-          />
-          <div className="ads-timeline-clock">
-            {formatTimeSimple(currentTime)}
+            </div>
           </div>
         </div>
       </div>
@@ -171,14 +262,16 @@ export function TwickTimelineRenderer({
 
 function TimelineTrackRow({
   track,
-  durationSeconds,
-  trackContainerRef,
+  timelineDuration,
+  attachLaneRef,
+  laneMeasureRef,
   disabled,
   onDragStateChange,
 }: {
   track: TrackJSON
-  durationSeconds: number
-  trackContainerRef: React.RefObject<HTMLDivElement | null>
+  timelineDuration: number
+  attachLaneRef: boolean
+  laneMeasureRef: React.RefObject<HTMLDivElement | null>
   disabled: boolean
   onDragStateChange: (dragging: boolean) => void
 }) {
@@ -192,6 +285,7 @@ function TimelineTrackRow({
     <div className="ads-timeline-track-row">
       <div className="ads-timeline-track-gutter" aria-hidden />
       <div
+        ref={attachLaneRef ? laneMeasureRef : undefined}
         className={clsx(
           "ads-timeline-track",
           isAdTrack && "ads-timeline-track-ads",
@@ -199,16 +293,16 @@ function TimelineTrackRow({
         )}
       >
         {track.elements.map((element) => {
-        const left = (element.s / durationSeconds) * 100
-        const width = ((element.e - element.s) / durationSeconds) * 100
+        const left = (element.s / timelineDuration) * 100
+        const width = ((element.e - element.s) / timelineDuration) * 100
 
         if (isAdMarkerElement(element)) {
           return (
             <DraggableAdClip
               key={element.id}
               element={element}
-              durationSeconds={durationSeconds}
-              trackContainerRef={trackContainerRef}
+              timelineDuration={timelineDuration}
+              laneMeasureRef={laneMeasureRef}
               disabled={disabled}
               onDragStateChange={onDragStateChange}
             />
@@ -234,7 +328,7 @@ function TimelineTrackRow({
               getElementColor(element)
             )}
             style={{ left: `${left}%`, width: `${Math.max(width, 1)}%` }}
-            title={`${element.name} (${formatTimeSimple(element.s)} – ${formatTimeSimple(element.e)})`}
+            title={`${element.name} (${formatTimeHms(element.s)} – ${formatTimeHms(element.e)})`}
           >
             {getElementLabel(element)}
           </div>
@@ -263,7 +357,7 @@ function EpisodeTimelineClip({
     <div
       className="ads-timeline-episode-clip"
       style={{ left: `${left}%`, width: `${Math.max(width, 1)}%` }}
-      title={`${element.name} (${formatTimeSimple(element.s)} – ${formatTimeSimple(element.e)})`}
+      title={`${element.name} (${formatTimeHms(element.s)} – ${formatTimeHms(element.e)})`}
     >
       {episodeSrc ? (
         <EpisodeVideoStrip
@@ -291,10 +385,10 @@ function computeAdClipDragRange(
   },
   clientX: number,
   laneWidth: number,
-  durationSeconds: number,
+  timelineDuration: number,
   episodeDurationSeconds: number
 ) {
-  const deltaSeconds = ((clientX - drag.startX) / laneWidth) * durationSeconds
+  const deltaSeconds = ((clientX - drag.startX) / laneWidth) * timelineDuration
 
   if (drag.mode === "move") {
     let nextStart = drag.origStart + deltaSeconds
@@ -331,14 +425,14 @@ function computeAdClipDragRange(
 
 function DraggableAdClip({
   element,
-  durationSeconds,
-  trackContainerRef,
+  timelineDuration,
+  laneMeasureRef,
   disabled,
   onDragStateChange,
 }: {
   element: ElementJSON
-  durationSeconds: number
-  trackContainerRef: React.RefObject<HTMLDivElement | null>
+  timelineDuration: number
+  laneMeasureRef: React.RefObject<HTMLDivElement | null>
   disabled: boolean
   onDragStateChange: (dragging: boolean) => void
 }) {
@@ -356,8 +450,8 @@ function DraggableAdClip({
 
   const clipStart = previewTimes?.start ?? element.s
   const clipEnd = previewTimes?.end ?? element.e
-  const displayLeft = (clipStart / durationSeconds) * 100
-  const displayWidth = ((clipEnd - clipStart) / durationSeconds) * 100
+  const displayLeft = (clipStart / timelineDuration) * 100
+  const displayWidth = ((clipEnd - clipStart) / timelineDuration) * 100
 
   const commitUpdate = useCallback(
     (start: number, end: number) => {
@@ -396,36 +490,34 @@ function DraggableAdClip({
   const moveDrag = useCallback(
     (event: PointerEvent<HTMLElement>) => {
       const drag = dragRef.current
-      const container = trackContainerRef.current
-      if (!drag || !container) return
+      const laneEl = laneMeasureRef.current
+      if (!drag || !laneEl) return
 
       event.stopPropagation()
-      const { laneWidth } = getLaneMetrics(container)
       const { start, end } = computeAdClipDragRange(
         drag,
         event.clientX,
-        laneWidth,
-        durationSeconds,
+        laneEl.offsetWidth,
+        timelineDuration,
         episodeDurationSeconds
       )
       setPreviewTimes({ start, end })
     },
-    [durationSeconds, episodeDurationSeconds, trackContainerRef]
+    [episodeDurationSeconds, laneMeasureRef, timelineDuration]
   )
 
   const endDrag = useCallback(
     (event: PointerEvent<HTMLElement>) => {
       const drag = dragRef.current
-      const container = trackContainerRef.current
+      const laneEl = laneMeasureRef.current
       if (!drag) return
 
-      if (container) {
-        const { laneWidth } = getLaneMetrics(container)
+      if (laneEl) {
         const { start, end } = computeAdClipDragRange(
           drag,
           event.clientX,
-          laneWidth,
-          durationSeconds,
+          laneEl.offsetWidth,
+          timelineDuration,
           episodeDurationSeconds
         )
         commitUpdate(start, end)
@@ -440,10 +532,10 @@ function DraggableAdClip({
     },
     [
       commitUpdate,
-      durationSeconds,
       episodeDurationSeconds,
+      laneMeasureRef,
       onDragStateChange,
-      trackContainerRef,
+      timelineDuration,
     ]
   )
 
@@ -454,7 +546,7 @@ function DraggableAdClip({
         disabled ? "cursor-not-allowed" : "cursor-grab active:cursor-grabbing"
       )}
       style={{ left: `${displayLeft}%`, width: `${Math.max(displayWidth, 1)}%` }}
-      title={`${element.name} (${formatTimeSimple(clipStart)} – ${formatTimeSimple(clipEnd)})`}
+      title={`${element.name} (${formatTimeHms(clipStart)} – ${formatTimeHms(clipEnd)})`}
       onPointerDown={(event) => beginDrag(event, "move")}
       onPointerMove={moveDrag}
       onPointerUp={endDrag}
@@ -495,19 +587,17 @@ function DraggableAdClip({
 
 function Playhead({
   playhead,
-  durationSeconds,
+  timelineDuration,
 }: {
   playhead: number
-  durationSeconds: number
+  timelineDuration: number
 }) {
-  const left = (playhead / durationSeconds) * 100
+  const left = (playhead / timelineDuration) * 100
 
   return (
     <div
       className="ads-timeline-playhead"
-      style={{
-        left: `calc(0.75rem + ${TRACK_GUTTER_PX}px + (100% - 1.5rem - ${TRACK_GUTTER_PX}px) * ${left / 100})`,
-      }}
+      style={{ left: `${left}%` }}
     >
       <div className="ads-timeline-playhead-handle" />
     </div>

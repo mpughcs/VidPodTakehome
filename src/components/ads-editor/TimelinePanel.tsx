@@ -1,15 +1,21 @@
 "use client"
 
-import { useState } from "react"
-import { Redo2, Undo2, ZoomIn, ZoomOut } from "lucide-react"
-import { formatTimeSimple, useTimelineContext } from "@twick/timeline"
-
+import { useCallback, useMemo, useState } from "react"
+import { formatTimeHms } from "@/lib/time-format"
+import { RiZoomInFill } from "react-icons/ri";
+import { RiZoomOutFill } from "react-icons/ri";
 import {
-  TwickTimelineRenderer,
   TIMELINE_ZOOM_MAX,
   TIMELINE_ZOOM_MIN,
-  TIMELINE_ZOOM_STEP,
-} from "@/components/ads-editor/timeline/TwickTimelineRenderer"
+  getTimelineDuration,
+  zoomAroundPlayhead,
+} from "@/lib/timeline-viewport"
+import { useTimelineContext } from "@twick/timeline"
+
+import { FaRedo } from "react-icons/fa"
+import { FaUndo } from "react-icons/fa"
+
+import { TwickTimelineRenderer } from "@/components/ads-editor/timeline/TwickTimelineRenderer"
 import { useAdsTimeline } from "@/context/AdsTimelineContext"
 
 function TimelineToolbar({
@@ -23,14 +29,16 @@ function TimelineToolbar({
 
   return (
     <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
-      <div className="flex gap-2">
+      <div className="flex gap-2 text-md font-normal">
         <button
           type="button"
           disabled={!canUndo}
           onClick={() => editor.undo()}
-          className="btn btn-ghost btn-sm gap-1 rounded-lg disabled:opacity-40"
+          className="btn btn-ghost btn-sm gap-1 rounded-lg border disabled:opacity-40"
         >
-          <Undo2 className="h-4 w-4" />
+          <span className="rounded-full border p-2">
+            <FaUndo className="h-4 w-4" />
+          </span>
           Undo
         </button>
         <button
@@ -39,40 +47,42 @@ function TimelineToolbar({
           onClick={() => editor.redo()}
           className="btn btn-ghost btn-sm gap-1 rounded-lg disabled:opacity-40"
         >
-          <Redo2 className="h-4 w-4" />
+          <span className="rounded-full border p-2">
+            <FaRedo className="h-4 w-4" />
+          </span>
           Redo
         </button>
       </div>
       <TimelinePlayheadClock />
-      <div className="flex items-center gap-2 text-slate-500">
+      <div className="flex min-w-[10rem] items-center gap-2 text-slate-500">
         <button
           type="button"
           aria-label="Zoom out timeline"
           disabled={zoom <= TIMELINE_ZOOM_MIN}
-          onClick={() =>
-            onZoomChange(
-              Math.max(TIMELINE_ZOOM_MIN, zoom - TIMELINE_ZOOM_STEP)
-            )
-          }
-          className="btn btn-ghost btn-sm btn-square rounded-lg disabled:opacity-40"
+          onClick={() => onZoomChange(zoom / 1.12)}
+          className="btn btn-ghost btn-sm btn-square shrink-0 rounded-lg disabled:opacity-40 text-black"
         >
-          <ZoomOut className="h-4 w-4" />
+          <RiZoomOutFill className="h-4 w-4" />
         </button>
-        <span className="min-w-[4.5rem] text-center text-xs tabular-nums">
-          {Math.round(zoom * 100)}%
-        </span>
+        <input
+          type="range"
+          min={TIMELINE_ZOOM_MIN}
+          max={TIMELINE_ZOOM_MAX}
+          step="any"
+          value={zoom}
+          
+          onChange={(event) => onZoomChange(Number(event.target.value))}
+          className=" range range-xs min-w-0 flex-1 text-black"
+          aria-label="Timeline zoom"
+        />
         <button
           type="button"
           aria-label="Zoom in timeline"
           disabled={zoom >= TIMELINE_ZOOM_MAX}
-          onClick={() =>
-            onZoomChange(
-              Math.min(TIMELINE_ZOOM_MAX, zoom + TIMELINE_ZOOM_STEP)
-            )
-          }
-          className="btn btn-ghost btn-sm btn-square rounded-lg disabled:opacity-40"
+          onClick={() => onZoomChange(zoom * 1.12)}
+          className="btn btn-ghost btn-sm btn-square shrink-0 rounded-lg disabled:opacity-40 text-black"
         >
-          <ZoomIn className="h-4 w-4" />
+          <RiZoomInFill className="h-4 w-4" />
         </button>
       </div>
     </div>
@@ -83,23 +93,46 @@ function TimelinePlayheadClock() {
   const { currentTime } = useAdsTimeline()
 
   return (
-    <span className="font-mono text-lg font-medium text-slate-800">
-      {formatTimeSimple(currentTime)}
+    <span className="w-[120px] rounded-md border p-2 text-center font-mono text-lg font-medium tabular-nums text-slate-800">
+      {formatTimeHms(currentTime)}
     </span>
   )
 }
 
 export function TimelinePanel() {
-  const { episodeDurationSeconds } = useAdsTimeline()
+  const { episodeDurationSeconds, currentTime } = useAdsTimeline()
+  const { present } = useTimelineContext()
   const [zoom, setZoom] = useState(1)
+  const [viewportStart, setViewportStart] = useState(0)
+
+  const timelineDuration = useMemo(
+    () => getTimelineDuration(present?.tracks ?? [], episodeDurationSeconds),
+    [present?.tracks, episodeDurationSeconds]
+  )
+
+  const handleZoomChange = useCallback(
+    (nextZoom: number) => {
+      const { zoom: clampedZoom, viewportStart: nextStart } = zoomAroundPlayhead({
+        currentZoom: zoom,
+        nextZoom,
+        timelineDuration,
+        viewportStart,
+        playhead: currentTime,
+      })
+      setZoom(clampedZoom)
+      setViewportStart(nextStart)
+    },
+    [currentTime, timelineDuration, viewportStart, zoom]
+  )
 
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-      <TimelineToolbar zoom={zoom} onZoomChange={setZoom} />
+      <TimelineToolbar zoom={zoom} onZoomChange={handleZoomChange} />
       <TwickTimelineRenderer
         durationSeconds={episodeDurationSeconds}
         zoom={zoom}
-        onZoomChange={setZoom}
+        viewportStart={viewportStart}
+        onViewportStartChange={setViewportStart}
       />
     </div>
   )

@@ -15,11 +15,16 @@
   flex-direction: column;
   min-width: 0;
   min-height: 220px;
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
   border: 1px solid var(--ads-timeline-slate-200);
   border-radius: 1rem;
   background: var(--ads-timeline-slate-50);
   box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+}
+
+.ads-custom-timeline .ads-timeline-inner {
+  min-width: 100%;
 }
 
 .ads-custom-timeline .ads-timeline-ruler {
@@ -64,6 +69,39 @@
   padding: 0.25rem 0.75rem 0.75rem;
 }
 
+.ads-custom-timeline .ads-timeline-playhead-layer {
+  position: absolute;
+  top: 0.25rem;
+  right: 0.75rem;
+  bottom: 0.75rem;
+  left: calc(0.75rem + 40px);
+  pointer-events: none;
+}
+
+.ads-custom-timeline .ads-timeline-playhead {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 30;
+  width: 2px;
+  background: var(--ads-timeline-playhead);
+  box-shadow: 0 0 6px rgb(239 68 68 / 0.55);
+  pointer-events: none;
+  transform: translateX(-50%);
+}
+
+.ads-custom-timeline .ads-timeline-playhead-handle {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 9999px;
+  background: var(--ads-timeline-playhead);
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.2);
+  transform: translate(-50%, -50%);
+}
+
 .ads-custom-timeline .ads-timeline-track-row {
   position: relative;
   display: flex;
@@ -89,45 +127,6 @@
   height: 100%;
   overflow: hidden;
   background: rgb(255 255 255 / 0.65);
-}
-
-.ads-custom-timeline .ads-timeline-playhead {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  z-index: 30;
-  width: 2px;
-  background: var(--ads-timeline-playhead);
-  box-shadow: 0 0 6px rgb(239 68 68 / 0.55);
-  pointer-events: none;
-}
-
-.ads-custom-timeline .ads-timeline-playhead-handle {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  width: 0.75rem;
-  height: 0.75rem;
-  border-radius: 9999px;
-  background: var(--ads-timeline-playhead);
-  box-shadow: 0 1px 4px rgb(0 0 0 / 0.2);
-  transform: translate(-50%, -50%);
-}
-
-.ads-custom-timeline .ads-timeline-footer {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  border-top: 1px solid var(--ads-timeline-slate-100);
-  padding: 0.75rem;
-  background: #fff;
-}
-
-.ads-custom-timeline .ads-timeline-clock {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 0.875rem;
-  text-align: center;
-  color: var(--ads-timeline-slate-700);
 }
 
 /* Episode clip — Twick-style purple chrome + real video thumbnails */

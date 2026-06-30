@@ -16,7 +16,7 @@ import { useEpisodes } from "@/context/EpisodeContext"
 
 function navItemClassName(active: boolean) {
   return clsx(
-    "flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left text-sm transition-colors focus-visible:outline-none",
+    "flex w-full items-center gap-3 rounded-md px-2 py-2 text-left text-sm transition-colors focus-visible:outline-none",
     active
       ? "cursor-default font-bold text-slate-900"
       : "font-medium text-slate-500 hover:bg-slate-200/50"
@@ -119,7 +119,7 @@ export function EpisodeDropdown() {
         type="button"
         aria-expanded={open}
         onClick={() => setOpen((prev) => !prev)}
-        className="flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-left shadow-sm transition-colors hover:bg-slate-50"
+        className="flex w-full items-center gap-3 rounded-md border border-slate-200 bg-white px-3 py-2 text-left shadow-sm transition-colors hover:bg-slate-50"
       >
         <div className="h-9 w-9 shrink-0 overflow-hidden rounded-md bg-slate-100">
           <img

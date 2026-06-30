@@ -15,20 +15,20 @@ export function WorkspaceSidebar() {
   const router = useRouter()
 
   return (
-    <aside className="flex w-[280px] shrink-0 flex-col border-r border-slate-200 bg-[#f7f7f7] px-4 py-5">
+    <aside className="flex w-[280px] shrink-0 flex-col border-r border-slate-200 bg-[#f7f7f7] px-4 py-5 h-screen">
       <div className="flex flex-col gap-3">
         {loading ? (
           <button
             type="button"
             disabled
-            className="w-full rounded-xl bg-neutral-900 px-4 py-3 text-sm font-semibold text-white opacity-60"
+            className="w-full rounded-md bg-neutral-900 px-4 py-3 text-sm font-semibold text-white opacity-60"
           >
             Loading…
           </button>
         ) : isAuthenticated ? (
           <button
             type="button"
-            className="w-full rounded-xl bg-neutral-900 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-neutral-800"
+            className="w-full rounded-md bg-neutral-900 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-neutral-800"
             onClick={openCreateEpisodeModal}
           >
             Create an episode
@@ -36,7 +36,7 @@ export function WorkspaceSidebar() {
         ) : (
           <button
             type="button"
-            className="w-full rounded-xl bg-neutral-900 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-neutral-800"
+            className="w-full rounded-md bg-neutral-900 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-neutral-800"
             onClick={() => router.push("/login")}
           >
             Sign in
@@ -81,27 +81,27 @@ export function WorkspaceSidebar() {
       )}
 
       <div className="mt-auto flex flex-col gap-1 pt-8">
-        <label className="flex cursor-pointer items-center justify-between rounded-lg px-2 py-2 text-sm text-slate-600">
+        <label className="flex cursor-pointer items-center justify-between rounded-md px-2 py-2 text-sm text-slate-600">
           <span>Demo mode</span>
           <input type="checkbox" className="toggle toggle-sm" defaultChecked />
         </label>
         <button
           type="button"
-          className="flex items-center gap-3 rounded-lg px-2 py-2 text-left text-sm text-slate-600 hover:bg-slate-200/50"
+          className="flex items-center gap-3 rounded-md px-2 py-2 text-left text-sm text-slate-600 hover:bg-slate-200/50"
         >
           <CiUser className="text-xl" />
           Invite your team
         </button>
         <button
           type="button"
-          className="flex items-center gap-3 rounded-lg px-2 py-2 text-left text-sm text-slate-600 hover:bg-slate-200/50"
+          className="flex items-center gap-3 rounded-md px-2 py-2 text-left text-sm text-slate-600 hover:bg-slate-200/50"
         >
           <CiChat1 className="text-xl" />
           Give feedback
         </button>
         <button
           type="button"
-          className="flex items-center gap-3 rounded-lg px-2 py-2 text-left text-sm text-slate-600 hover:bg-slate-200/50"
+          className="flex items-center gap-3 rounded-md px-2 py-2 text-left text-sm text-slate-600 hover:bg-slate-200/50"
         >
           <CiCircleQuestion className="text-xl" />
           Help &amp; support
